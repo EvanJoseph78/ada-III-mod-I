@@ -39,11 +39,46 @@ services:
     volumes:
       - kafka-data:/tmp/kraft-combined-logs
     healthcheck:
-      test: ["CMD", "/opt/kafka/bin/kafka-topics.sh", "--bootstrap-server", "localhost:9092", "--list"]
+      test:
+        [
+          "CMD",
+          "/opt/kafka/bin/kafka-topics.sh",
+          "--bootstrap-server",
+          "localhost:9092",
+          "--list",
+        ]
       interval: 10s
       timeout: 10s
       retries: 12
       start_period: 30s
+  postgres:
+    image: postgres:17
+    ports:
+      - "127.0.0.1:5432:5432"
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres-local}
+      EMPREGADOS_DB_PASSWORD: ${EMPREGADOS_DB_PASSWORD:-empregados-local}
+      VAGAS_DB_PASSWORD: ${VAGAS_DB_PASSWORD:-vagas-local}
+      CANDIDATURAS_DB_PASSWORD: ${CANDIDATURAS_DB_PASSWORD:-candidaturas-local}
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./infra/postgres/01-create-databases.sh:/docker-entrypoint-initdb.d/01-create-databases.sh:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
 
+  redis:
+    image: redis:7.4-alpine
+    ports:
+      - "127.0.0.1:6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
 volumes:
   kafka-data:
+  postgres-data:
