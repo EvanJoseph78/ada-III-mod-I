@@ -4,7 +4,9 @@ Usar TEMPLATE.md para cada decisão. Registrar alternativas e trade-offs reais.
 
 ## Decisões registradas
 
-- [ADR-001 — Uso de Docker no ambiente do projeto](ADR-001-uso-de-docker.md) — aceita; implementação do ambiente pendente.
+- [ADR-001 - Uso de Docker no ambiente do projeto](ADR-001-uso-de-docker.md) — aceita; 
+- [ADR-002 - Estrategia de testes](ADR-002-estrategia-de-testes.md) — aceita; 
+- implementação do ambiente pendente.
 
 ## Decisões pendentes
 
