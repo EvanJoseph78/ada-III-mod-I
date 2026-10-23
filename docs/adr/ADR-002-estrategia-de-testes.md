@@ -60,7 +60,7 @@ Os cenários de comportamento (idempotência, retry/DLQ, invalidação de cache)
 
 - Configuração dos perfis Maven e da exclusão da etiqueta `docker`: `pom.xml` (pendente).
 - Contrato executável: `shared-contracts/pacts` e sua verificação (pendente).
-- Resultado de `mvn verify` sem Docker registrado em `AVALIACAO.md` (pendente).
+- Primeiro conjunto implementado: seis testes HTTP/JPA com H2, migrações Flyway e validação de schema; resultado sem Docker em [persistencia.md](../evidencias/persistencia.md) e `AVALIACAO.md`. Os demais componentes da estratégia continuam pendentes.
 - Decisão anterior: [ADR-001](ADR-001-uso-de-docker.md).
 
 Pendências:

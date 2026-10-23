@@ -5,6 +5,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.UUID;
+import jakarta.validation.Valid;
+import br.com.ada.selecaointerna.contracts.PerfilProfissionalDto;
 
 @RestController
 @RequestMapping("/api/v1/empregados")
@@ -25,8 +28,13 @@ public class EmpregadosController {
   }
 
   @PostMapping
-  public ResponseEntity<EmpregadoOutputDto> cadastrarEmpregado(@RequestBody EmpregadoInputDto empregadoInputDto) {
+  public ResponseEntity<EmpregadoOutputDto> cadastrarEmpregado(@Valid @RequestBody EmpregadoInputDto empregadoInputDto) {
     return ResponseEntity.status(201).body(service.cadastrarEmpregado(empregadoInputDto));
+  }
+
+  @GetMapping("/{id}/perfil")
+  public PerfilProfissionalDto obterPerfil(@PathVariable UUID id) {
+    return service.obterPerfil(id);
   }
 
 }

@@ -6,13 +6,13 @@ Perfil alvo: A (Docker). A infraestrutura possui evidência de execução. Os se
 
 | Critério | Peso | Estado | Evidência |
 | --- | --- | --- | --- |
-| 1. Decomposição de domínio | 15 | Em andamento | [Arquitetura](docs/arquitetura.md): três contextos com dados próprios. [Infraestrutura](docs/evidencias/execucao-infra.md): um banco e um usuário por serviço, acesso cruzado negado. Integração dos serviços com persistência pendente |
+| 1. Decomposição de domínio | 15 | Em andamento | [Arquitetura](docs/arquitetura.md) e [ADR-004](docs/adr/ADR-004-persistencia-por-servico.md): entidades, repositórios e migrações próprios por serviço. [Infraestrutura](docs/evidencias/execucao-infra.md): segregação dos bancos. [Testes H2](docs/evidencias/persistencia.md) aprovados; validar aplicações com PostgreSQL |
 | 2. Comunicação assíncrona | 15 | Em andamento | `compose.yaml` e [evidência de execução](docs/evidencias/execucao-infra.md): Kafka local saudável. Produtores e consumidores a implementar |
 | 3. Idempotência e consistência | 12 | Pendente | Implementação e teste de reprocessamento a realizar |
 | 4. Cache | 10 | Em andamento | `compose.yaml` e [evidência de execução](docs/evidencias/execucao-infra.md): Redis local saudável. Estratégia, TTL, invalidação e fallback a implementar |
 | 5. Resiliência | 12 | Pendente | Implementação e testes de falhas a realizar |
-| 6. Testabilidade | 13 | Em andamento | [ADR-002](docs/adr/ADR-002-estrategia-de-testes.md): estratégia definida. [ADR-003](docs/adr/ADR-003-heranca-maven.md): build validado sem Docker. Testes automatizados, Pact e testes de integração pendentes |
-| 7. Decisões arquiteturais | 13 | Em andamento | [ADR-001](docs/adr/ADR-001-uso-de-docker.md), [ADR-002](docs/adr/ADR-002-estrategia-de-testes.md) e [ADR-003](docs/adr/ADR-003-heranca-maven.md). Demais decisões de domínio, mensageria e cache a registrar |
+| 6. Testabilidade | 13 | Em andamento | [ADR-002](docs/adr/ADR-002-estrategia-de-testes.md): estratégia definida. [Persistência](docs/evidencias/persistencia.md): seis testes de integração HTTP/JPA/H2 aprovados sem Docker. Pact, idempotência, cache e testes de resiliência pendentes |
+| 7. Decisões arquiteturais | 13 | Em andamento | [ADR-001](docs/adr/ADR-001-uso-de-docker.md), [ADR-002](docs/adr/ADR-002-estrategia-de-testes.md), [ADR-003](docs/adr/ADR-003-heranca-maven.md) e [ADR-004](docs/adr/ADR-004-persistencia-por-servico.md). Mensageria, cache e evolução do fluxo a registrar |
 | 8. Uso crítico de IA | 5 | Em registro | [Uso de IA](docs/uso-de-ia.md): sugestão sobre Maven, decisão humana, limitação de escopo e validação pela IA. Revisão final do grupo pendente |
 | 9. Execução comprovada | 5 | Parcial | [Infraestrutura](docs/evidencias/execucao-infra.md): Kafka, PostgreSQL e Redis saudáveis no perfil A. Compilação e empacotamento conforme [ADR-003](docs/adr/ADR-003-heranca-maven.md); fluxo completo e clone limpo pendentes |
 
@@ -26,7 +26,11 @@ mvn -o clean verify
 
 Resultado: `BUILD SUCCESS` para `selecao-interna`, `empregados-service`, `vagas-service`, `candidaturas-service` e `shared-contracts`. A execução ocorreu sem Docker e utilizou dependências previamente disponíveis no repositório Maven local. Em uma máquina sem essas dependências, executar `mvn clean verify` com acesso aos repositórios configurados.
 
-Essa verificação foi executada pela IA e comprova compilação e empacotamento. Como não há testes automatizados nesta versão, ela não comprova os critérios de contrato executável, idempotência, cache ou resiliência.
+Essa verificação foi executada pela IA e comprova compilação e empacotamento. Na versão do ajuste dos POMs ainda não havia testes automatizados; o resultado não comprovava contrato executável, idempotência, cache ou resiliência.
+
+## Evolução — persistência mínima
+
+Após o ajuste dos POMs, foram implementados cadastros persistentes de perfil, critérios de vaga e candidatura. `mvn clean verify` passou com seis testes de integração sem Docker, aplicando migrações Flyway e validando o schema no H2. Ver [resultado, limites e roteiro PostgreSQL](docs/evidencias/persistencia.md). O fluxo completo entre serviços, o teste de contrato e a execução das aplicações com PostgreSQL continuam pendentes.
 
 ## Opcionais entregues
 
