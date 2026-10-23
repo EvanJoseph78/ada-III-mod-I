@@ -1,4 +1,4 @@
-package br.com.ada.selecaointerna.empregadosservice;
+package br.com.ada.selecaointerna.empregadosservice.interfaces.dto;
 
 import lombok.Data;
 
