@@ -1,4 +1,4 @@
-package br.com.ada.selecaointerna.vagasservice;
+package br.com.ada.selecaointerna.vagasservice.dtos;
 
 import lombok.Data;
 

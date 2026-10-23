@@ -1,0 +1,13 @@
+spring:
+  application:
+    name: candidaturasservice
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+
+  datasource:
+    url: ${DB_URL_CANDIDATURAS}
+    username: ${DB_USER_CANDIDATURAS}
+    password: ${DB_PASS_CANDIDATURAS}
+    driver-class-name: org.postgresql.Driver

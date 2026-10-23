@@ -1,3 +1,13 @@
 spring:
   application:
     name: empregadosservice
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+
+  datasource:
+    url: ${DB_URL_EMPREGADOS}
+    username: ${DB_USER_EMPREGADOS}
+    password: ${DB_PASS_EMPREGADOS}
+    driver-class-name: org.postgresql.Driver

@@ -1,11 +1,14 @@
-package br.com.ada.selecaointerna.vagasservice;
+package br.com.ada.selecaointerna.vagasservice.dtos;
 
+import br.com.ada.selecaointerna.vagasservice.models.Vaga;
 import lombok.Data;
+
+import java.util.UUID;
 
 @Data
 public class VagaOutputDto {
 
-  private Long idVaga;
+  private UUID idVaga;
   private String nomeVaga;
 
   public VagaOutputDto(Vaga vaga) {

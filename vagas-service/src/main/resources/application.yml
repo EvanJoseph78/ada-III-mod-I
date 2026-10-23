@@ -1,3 +1,13 @@
 spring:
   application:
     name: vagasservice
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+
+  datasource:
+    url: ${DB_URL_VAGAS}
+    username: ${DB_USER_VAGAS}
+    password: ${DB_PASS_VAGAS}
+    driver-class-name: org.postgresql.Driver

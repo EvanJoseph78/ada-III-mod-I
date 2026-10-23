@@ -1,10 +1,14 @@
-package br.com.ada.selecaointerna.vagasservice;
+package br.com.ada.selecaointerna.vagasservice.controllers;
 
+import br.com.ada.selecaointerna.vagasservice.dtos.VagaInputDto;
+import br.com.ada.selecaointerna.vagasservice.dtos.VagaOutputDto;
+import br.com.ada.selecaointerna.vagasservice.services.VagasService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/v1/vagas")
@@ -20,7 +24,7 @@ public class VagasController {
   }
 
   @GetMapping("/{idVaga}")
-  public ResponseEntity<VagaOutputDto> obterVaga(@PathVariable("idVaga") Long idVaga) {
+  public ResponseEntity<VagaOutputDto> obterVaga(@PathVariable("idVaga") UUID idVaga) {
     return ResponseEntity.status(200).body(service.obterVaga(idVaga));
   }
 
@@ -30,7 +34,7 @@ public class VagasController {
   }
 
   @DeleteMapping("/{idVaga}")
-  public ResponseEntity<Void> removerVaga(@RequestParam("idVaga") Long idVaga) {
+  public ResponseEntity<Void> removerVaga(@RequestParam("idVaga") UUID idVaga) {
     service.removerVaga(idVaga);
     return ResponseEntity.status(204).build();
   }
