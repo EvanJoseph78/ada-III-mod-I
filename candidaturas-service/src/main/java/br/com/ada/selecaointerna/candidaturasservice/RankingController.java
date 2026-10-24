@@ -8,8 +8,8 @@ import org.springframework.web.bind.annotation.*;
 @RequiredArgsConstructor
 @RequestMapping("/api/v1/candidaturas/ranking")
 public class RankingController {
-  private final RankingConsulta consulta;
+  private final RankingService service;
 
   @GetMapping("/{vagaId}")
-  public RankingDto obter(@PathVariable UUID vagaId) { return consulta.consultar(vagaId); }
+  public RankingDto obter(@PathVariable UUID vagaId) { return service.obter(vagaId); }
 }

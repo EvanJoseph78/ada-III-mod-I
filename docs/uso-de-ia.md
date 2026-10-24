@@ -1,5 +1,9 @@
 # Uso crítico de IA
 
+## 2026-10-24 — Cache, etapa 2
+
+A IA implementou cache-aside com Redis, JSON tipado, TTL e substituição explícita por Caffeine nos testes. A invalidação é lógica por revisão (contagem de avaliações confirmadas por vaga), evitando repovoamento de uma chave nova por uma leitura antiga. Seis testes de ranking/cache foram aprovados. A documentação registra o custo da consulta de revisão em cada GET e a restrição a avaliações imutáveis; não foi alegada redução percentual de latência. Falhas, concorrência, TTL e Redis real seguem na próxima etapa.
+
 ## 2026-10-24 — Cache, etapa 1
 
 O responsável solicitou concluir cache com estratégia/invalidação explícitas e commits separados. A IA começou pela fonte de dados: ranking parcial de avaliações elegíveis, ordenação determinística e endpoint HTTP. Dois testes H2/HTTP foram aprovados em compilação limpa. A ADR-006 distingue a consulta pronta da camada Redis ainda pendente e registra a escolha de cache-aside com revisão por vaga, condicionada a avaliações imutáveis e somente inseridas.

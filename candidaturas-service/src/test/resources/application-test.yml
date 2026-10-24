@@ -9,3 +9,6 @@ spring:
       ddl-auto: validate
 mensageria:
   enabled: false
+ranking:
+  cache:
+    tipo: caffeine

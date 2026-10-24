@@ -9,7 +9,7 @@ Perfil alvo: A (Docker). Infraestrutura, persistência e fluxo de inscrição/av
 | 1. Decomposição de domínio | 15 | Em andamento | [Arquitetura](docs/arquitetura.md) e [ADR-004](docs/adr/ADR-004-persistencia-por-servico.md): entidades, repositórios e migrações próprios por serviço. [Infraestrutura](docs/evidencias/execucao-infra.md): segregação dos bancos. [Testes H2 e validação PostgreSQL](docs/evidencias/persistencia.md) aprovados, inclusive após reiniciar os três serviços |
 | 2. Comunicação assíncrona | 15 | Implementada no fluxo de candidatura | [ADR-005](docs/adr/ADR-005-fluxo-assincrono.md) e [fluxo assíncrono](docs/evidencias/fluxo-assincrono.md): outbox, produtor, listener Kafka e avaliação persistida; testes e execução local aprovados |
 | 3. Idempotência e consistência | 12 | Implementada na avaliação | [Fluxo assíncrono](docs/evidencias/fluxo-assincrono.md): resultado único, bloqueio transacional, reentrega/concorrência e reenvio após reiniciar a aplicação sem duplicar; atomicidade da outbox testada |
-| 4. Cache | 10 | Em andamento | `compose.yaml` e [evidência de execução](docs/evidencias/execucao-infra.md): Redis local saudável. Estratégia, TTL, invalidação e fallback a implementar |
+| 4. Cache | 10 | Em validação | [ADR-006](docs/adr/ADR-006-cache-ranking.md): cache-aside, TTL e invalidação lógica por revisão. [Testes de ranking/cache](docs/evidencias/cache-ranking.md) aprovados com Caffeine; TTL, falhas/concorrência e Redis real seguem na etapa 3 |
 | 5. Resiliência | 12 | Parcial | [Fluxo assíncrono](docs/evidencias/fluxo-assincrono.md): timeouts HTTP, retomada da outbox, retry exponencial e DLT; testes de falha transitória, persistente e JSON inválido. Operação de replay manual e demais fluxos a evoluir |
 | 6. Testabilidade | 13 | Em andamento | [ADR-002](docs/adr/ADR-002-estrategia-de-testes.md): estratégia definida. [Persistência](docs/evidencias/persistencia.md): 30 testes no build completo sem Docker, incluindo Kafka KRaft, idempotência e falhas conforme [fluxo assíncrono](docs/evidencias/fluxo-assincrono.md). Pact, cache e suíte Testcontainers pendentes |
 | 7. Decisões arquiteturais | 13 | Em andamento | [ADR-001](docs/adr/ADR-001-uso-de-docker.md), [ADR-002](docs/adr/ADR-002-estrategia-de-testes.md), [ADR-003](docs/adr/ADR-003-heranca-maven.md), [ADR-004](docs/adr/ADR-004-persistencia-por-servico.md) e [ADR-005](docs/adr/ADR-005-fluxo-assincrono.md). Cache e publicação de resultado a registrar |
@@ -45,6 +45,8 @@ Etapa 4: listener Kafka, retry/DLT e verificação ponta a ponta concluídos. `m
 ## Evolução — ranking e cache por etapas
 
 Etapa 1: endpoint de ranking parcial implementado, com dois testes de filtro/ordenação e resposta HTTP aprovados. Essa etapa ainda não utiliza cache. Decisão na [ADR-006](docs/adr/ADR-006-cache-ranking.md) e evidência em [cache-ranking.md](docs/evidencias/cache-ranking.md).
+
+Etapa 2: Redis/Caffeine, cache-aside e chave por revisão implementados; seis testes direcionados aprovados. A contagem das avaliações muda a chave no commit e evita depender de um evento de invalidação separado. Validação de falhas/TTL e Redis real ainda pendente.
 
 ## Opcionais (grupo de três integrantes)
 

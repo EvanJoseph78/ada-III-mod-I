@@ -7,6 +7,8 @@ import org.springframework.data.repository.query.Param;
 import java.util.List;
 
 public interface AvaliacaoRepository extends JpaRepository<Avaliacao, UUID> {
+  long countByVagaId(UUID vagaId);
+
   @Query("""
       select new br.com.ada.selecaointerna.candidaturasservice.RankingLinha(
           a.candidaturaId, a.empregadoId, c.matriculaEmpregado, a.pontuacao, c.realizadaEm)

@@ -19,7 +19,7 @@ Cada serviço usa sua própria base PostgreSQL e seu próprio usuário. Kafka tr
 
 Perfil alvo: **A — Docker em máquina pessoal**.
 
-Estado atual: aplicações Spring Boot 3.5.9 com Java 21, persistência JPA e migrações Flyway nos três bancos. A inscrição consulta perfil/critérios por HTTP, grava snapshots e outbox e é avaliada por consumidor Kafka idempotente, com retry/DLT. Há 30 testes sem Docker (H2 e Kafka KRaft embarcado) e validação do fluxo com infraestrutura local. Cache, ranking, publicação do resultado da vaga e Pact continuam pendentes. Os profiles Maven A/B/C continuam como marcadores e não configuram os ambientes.
+Estado atual: aplicações Spring Boot 3.5.9 com Java 21, persistência JPA e migrações Flyway nos três bancos. A inscrição consulta perfil/critérios por HTTP, grava snapshots e outbox e é avaliada por consumidor Kafka idempotente, com retry/DLT. Há 30 testes sem Docker (H2 e Kafka KRaft embarcado) e validação do fluxo com infraestrutura local. Ranking parcial e cache-aside estão implementados e em validação; publicação do resultado da vaga e Pact continuam pendentes. Os profiles Maven A/B/C continuam como marcadores e não configuram os ambientes.
 
 ### Build e testes sem Docker
 
@@ -69,7 +69,13 @@ As variáveis aceitas seguem o padrão `EMPREGADOS_DB_URL`, `EMPREGADOS_DB_USER`
 
 O roteiro de cadastro, consulta e verificação após reiniciar está em [persistencia.md](docs/evidencias/persistencia.md). A integração foi validada com sete testes H2 e com PostgreSQL 17.11, incluindo leitura dos dados após reiniciar os três serviços. A execução a partir de um clone limpo e o fluxo completo entre serviços continuam pendentes.
 
-### Kafka local
+### Cache do ranking
+
+`GET /api/v1/candidaturas/ranking/{vagaId}` consulta o ranking parcial de elegíveis, por UUID da vaga. Redis é usado como cache-aside, com `REDIS_HOST` (localhost), `REDIS_PORT` (6379), `REDIS_PASSWORD` (vazio por padrão) e `RANKING_CACHE_TTL_SEGUNDOS` (60). Os timeouts de conexão/comando são 300 ms. Configurar as mesmas credenciais do ambiente; as aplicações Java não carregam o `.env` automaticamente.
+
+A chave inclui a revisão (total de avaliações da vaga): um novo resultado confirmado invalida logicamente a entrada anterior, que expira pelo TTL. A revisão é consultada no banco em cada GET, mesmo no cache hit. Em falha de Redis, o ranking é lido do banco; não há fallback silencioso para cache local na aplicação. `RANKING_CACHE_TIPO=caffeine` é uma substituição explícita usada nos testes sem Docker, não uma topologia de cache distribuído. Ver [ADR-006](docs/adr/ADR-006-cache-ranking.md) e [evidências](docs/evidencias/cache-ranking.md).
+
+### Kafka e avaliação
 
 A inscrição já consulta Empregados e Vagas por HTTP antes de gravar seus snapshots. Configurar em Candidaturas `EMPREGADOS_SERVICE_URL` e `VAGAS_SERVICE_URL` (padrões `http://localhost:8081` e `http://localhost:8082`, sem `/api/v1`) e `INTEGRACOES_TIMEOUT_MS` (padrão 2000 por conexão/leitura). Consultar [contratos](docs/contratos.md) para os códigos de erro e [acompanhamento do fluxo](docs/evidencias/fluxo-assincrono.md) para a etapa atual.
 
