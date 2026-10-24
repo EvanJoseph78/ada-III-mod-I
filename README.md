@@ -13,13 +13,13 @@ Perfis profissionais, vagas, inscrições, avaliação curricular, pontuação e
 - candidaturas-service: inscrições, avaliação e ranking.
 - shared-contracts: contratos de integração, sem entidades de persistência compartilhadas.
 
-Cada serviço usa sua própria base PostgreSQL e seu próprio usuário. Kafka está previsto para os eventos de candidatura, avaliação e resultado.
+Cada serviço usa sua própria base PostgreSQL e seu próprio usuário. Kafka transporta candidaturas para avaliação; eventos de avaliação concluída e publicação do resultado da vaga continuam planejados.
 
 ## Ambiente e execução
 
 Perfil alvo: **A — Docker em máquina pessoal**.
 
-Estado atual: aplicações Spring Boot 3.5.9 com Java 21, persistência JPA e migrações Flyway para os três bancos PostgreSQL. Há testes de integração com H2 sem Docker. A inscrição consulta perfil/critérios por HTTP e persiste snapshots. Publicação/consumo Kafka, cache, avaliação e ranking estão em implementação ou pendentes; consultar o acompanhamento por etapas abaixo. Os profiles Maven A/B/C continuam como marcadores e não configuram os ambientes.
+Estado atual: aplicações Spring Boot 3.5.9 com Java 21, persistência JPA e migrações Flyway nos três bancos. A inscrição consulta perfil/critérios por HTTP, grava snapshots e outbox e é avaliada por consumidor Kafka idempotente, com retry/DLT. Há 30 testes sem Docker (H2 e Kafka KRaft embarcado) e validação do fluxo com infraestrutura local. Cache, ranking, publicação do resultado da vaga e Pact continuam pendentes. Os profiles Maven A/B/C continuam como marcadores e não configuram os ambientes.
 
 ### Build e testes sem Docker
 
@@ -31,6 +31,8 @@ mvn clean verify
 
 O reactor compila primeiro `shared-contracts`, executa os testes e gera os JARs dos serviços. Os testes usam o profile Spring `test`, ativado pelas classes de teste, com H2 em modo PostgreSQL e as mesmas migrações Flyway da aplicação. O profile Spring `test` não é o profile Maven B. O resultado e seus limites estão em [persistencia.md](docs/evidencias/persistencia.md).
 
+`FluxoKafkaTest` inicia um broker KRaft na JVM, em portas livres, para verificar publicação/consumo, reentrega, retry e DLT. Não precisa do Kafka local nem de Docker. O teste usa cliente/broker 3.9.1, gerenciados pelas dependências; a infraestrutura do Compose declara Kafka 4.1.1. Evidências e limites em [fluxo-assincrono.md](docs/evidencias/fluxo-assincrono.md).
+
 ### Serviços com PostgreSQL
 
 Com Docker disponível, iniciar o banco sem apagar volumes:
@@ -38,6 +40,8 @@ Com Docker disponível, iniciar o banco sem apagar volumes:
 ```sh
 docker compose up -d --wait postgres
 ```
+
+Para a avaliação assíncrona, iniciar também Kafka com `docker compose up -d --wait kafka` antes de Candidaturas. Redis ainda não é utilizado pelo fluxo implementado.
 
 O Compose cria os bancos e usuários na primeira inicialização do volume. Os padrões locais são:
 
@@ -69,7 +73,9 @@ O roteiro de cadastro, consulta e verificação após reiniciar está em [persis
 
 A inscrição já consulta Empregados e Vagas por HTTP antes de gravar seus snapshots. Configurar em Candidaturas `EMPREGADOS_SERVICE_URL` e `VAGAS_SERVICE_URL` (padrões `http://localhost:8081` e `http://localhost:8082`, sem `/api/v1`) e `INTEGRACOES_TIMEOUT_MS` (padrão 2000 por conexão/leitura). Consultar [contratos](docs/contratos.md) para os códigos de erro e [acompanhamento do fluxo](docs/evidencias/fluxo-assincrono.md) para a etapa atual.
 
-Candidaturas grava uma outbox junto com a inscrição e publica pendências a cada `OUTBOX_INTERVALO_MS` (padrão 1000). Configurar `KAFKA_BOOTSTRAP_SERVERS` (padrão `localhost:9092`). `MENSAGERIA_ENABLED=false` desativa o dispatcher e a criação dos tópicos para uma execução somente HTTP/persistência; a outbox continua sendo gravada para envio posterior. A resposta 201 confirma o registro durável, não a conclusão da avaliação.
+Candidaturas grava uma outbox junto com a inscrição e publica pendências a cada `OUTBOX_INTERVALO_MS` (padrão 1000). Configurar `KAFKA_BOOTSTRAP_SERVERS` (padrão `localhost:9092`). `MENSAGERIA_ENABLED=false` desativa dispatcher, listener e criação dos tópicos para execução somente HTTP/persistência; a outbox continua sendo gravada para envio posterior. A resposta 201 confirma o registro durável, não a conclusão da avaliação.
+
+Consultar `GET /api/v1/candidaturas/{candidaturaId}` até `status=AVALIADA` para obter `elegivel` e `pontuacao`. O grupo é configurável por `AVALIACAO_CONSUMER_GROUP` (padrão `avaliacao-curricular`). Reentregas preservam resultado/data. Falhas transitórias usam duas novas tentativas com backoff exponencial, iniciado por `AVALIACAO_RETRY_INTERVALO_MS` (padrão 1000). Falhas persistentes ou dados inválidos seguem para `candidaturas.realizadas.DLT`; não há replay automático. Uma inscrição sem resultado continua PENDENTE, por isso investigar também a DLT em caso de espera prolongada. O [roteiro do fluxo](docs/evidencias/fluxo-assincrono.md) inclui demonstração e repetição de eventos.
 
 Com Docker em execução, na raiz do repositório:
 

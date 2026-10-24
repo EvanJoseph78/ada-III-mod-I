@@ -61,13 +61,14 @@ Os cenários de comportamento (idempotência, retry/DLQ, invalidação de cache)
 - Configuração dos perfis Maven e da exclusão da etiqueta `docker`: `pom.xml` (pendente).
 - Contrato executável: `shared-contracts/pacts` e sua verificação (pendente).
 - Primeiro conjunto implementado: seis testes HTTP/JPA com H2, migrações Flyway e validação de schema; resultado sem Docker em [persistencia.md](../evidencias/persistencia.md) e `AVALIACAO.md`. Os demais componentes da estratégia continuam pendentes.
+- Evolução em 2026-10-24: 30 testes no build completo, incluindo 25 de Candidaturas com HTTP, H2, outbox, cálculo, concorrência e Kafka KRaft embarcado. Resultado em [fluxo-assincrono.md](../evidencias/fluxo-assincrono.md). Pact, cache e suíte Testcontainers permanecem pendentes.
 - Decisão anterior: [ADR-001](ADR-001-uso-de-docker.md).
 
 Pendências:
 
-- [ ] Definir a versão do Spring Boot e verificar a compatibilidade do Kafka embarcado com o broker `apache/kafka:4.1.1`.
+- [x] Definir Spring Boot 3.5.9, Spring Kafka 3.3.11 e cliente/broker embarcado 3.9.1; verificar publicação/consumo no Kafka local. O Compose define a imagem 4.1.1; a versão binária do broker local não foi interrogada diretamente nesta sessão.
 - [ ] Configurar o Surefire para excluir a etiqueta `docker` por padrão.
 - [ ] Configurar o perfil A para incluir os testes `docker`.
-- [ ] Escrever o primeiro teste de idempotência na suíte sem Docker.
-- [ ] Escrever o teste de retry (falha transitória) e de DLQ (falha permanente).
+- [x] Escrever teste de idempotência e concorrência sem Docker, incluindo reentrega pelo Kafka.
+- [x] Escrever teste de retry transitório, esgotamento de tentativas e mensagem inválida para DLT (a DLQ deste fluxo).
 - [ ] Gerar e verificar o contract test de `ResultadoPublicado`.

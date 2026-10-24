@@ -1,5 +1,11 @@
 # Uso crítico de IA
 
+## 2026-10-24 — Fluxo assíncrono, etapa 4
+
+Conforme a solicitação de concluir produtor/consumidor/idempotência em etapas, a IA conectou o listener, configurou retry exponencial e DLT e adicionou quatro testes com broker KRaft embarcado. O build completo aprovou 30 testes sem Docker. Também foram executadas consultas HTTP reais entre os três serviços, publicação/consumo no Kafka local, persistência PostgreSQL e reentrega após encerrar a instância anterior e iniciar outra de Candidaturas. Um helper local aguardou o offset confirmado e verificou que quantidade, pontuação e data da avaliação permaneceram iguais.
+
+Os quatro commits separam integração HTTP/snapshots, outbox/produtor, cálculo/idempotência e listener/testes de fluxo. A evidência distingue Kafka embarcado 3.9.1 da infraestrutura declarada 4.1.1 e não atribui a esta sessão inspeção da versão binária do broker, criação de contêineres ou execução a partir de clone limpo. Cache, Pact e publicação do resultado da vaga continuam pendentes. Cabe ao responsável revisar regras de negócio e diff antes de integrar/publicar a branch.
+
 ## 2026-10-24 — Fluxo assíncrono, etapa 3
 
 A IA implementou regras determinísticas de pontuação e avaliação única por candidatura, preservando o snapshot original. A verificação sem Docker aprovou 21 testes do módulo, incluindo reentrega e entregas concorrentes em transações reais H2. A documentação distingue essa prova de persistência da prova de consumo Kafka, que será feita na etapa seguinte. A regra de correspondência por tipo/palavra-chave/duração é explícita na ADR-005 e deve ser conferida pelo grupo.

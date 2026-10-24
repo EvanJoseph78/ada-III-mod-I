@@ -70,4 +70,4 @@ Pendências para comprovar a execução desta decisão:
 - [ ] Executar o ambiente a partir de um clone limpo.
 - [x] Registrar evidência de execução da infraestrutura em `AVALIACAO.md` (parcial: a aplicação ainda não existe).
 - [x] Definir a estratégia de testes sem Docker ([ADR-002](ADR-002-estrategia-de-testes.md)).
-- [ ] Verificar `mvn verify` verde sem Docker.
+- [x] Verificar build/testes sem Docker: 30 testes aprovados em 24/10/2026, incluindo Kafka KRaft embarcado; ver [fluxo-assincrono.md](../evidencias/fluxo-assincrono.md). Isso não encerra as pendências de clone limpo e dos demais requisitos.

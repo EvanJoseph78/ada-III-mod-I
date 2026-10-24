@@ -1,6 +1,6 @@
 # ADR-005 — Snapshots, outbox e avaliação idempotente
 
-Status: aceita; implementação em etapas
+Status: aceita e implementada para o fluxo de candidatura/avaliação
 Data: 2026-10-24
 
 ## Contexto
@@ -37,7 +37,9 @@ O CORE exige produtor, consumidor e idempotência. Candidaturas precisa usar os 
 - Etapa 1: consultas HTTP, validação e snapshot persistido. Testes de cliente HTTP e persistência em `candidaturas-service`; resultado em [fluxo-assincrono.md](../evidencias/fluxo-assincrono.md).
 - Etapa 2: outbox na mesma transação da candidatura, publicador com confirmação do Kafka e retomada de pendências. O registro é bloqueado por publicação, evitando publicadores concorrentes sobre a mesma linha. A transação mantém esse bloqueio durante o envio, limitado a 12 segundos; é uma escolha simples para o volume do projeto.
 - Etapa 3: cálculo e persistência idempotente da avaliação. Bloqueio pessimista da candidatura coordena entregas concorrentes; a avaliação tem PK `candidaturaId` e unicidade de `eventId`. O evento recebido deve coincidir com o snapshot original persistido, pois é interno a Candidaturas. Resultado e deduplicação são a mesma gravação transacional; falha antes do commit permite nova tentativa.
-- Etapa 4: conectar o listener Kafka e comprovar o fluxo com broker, retries e mensagens inválidas (pendente).
+- Etapa 4: listener Kafka conectado ao grupo `avaliacao-curricular`, com commit de offset após o processamento. Duas novas tentativas com backoff exponencial (padrão 1 e 2 segundos), seguidas de DLT para falhas persistentes; dados inválidos são encaminhados sem retry de negócio. A confirmação de recuperação depende do envio bem-sucedido à DLT. Testes com KRaft embarcado e verificação com PostgreSQL/Kafka locais aprovados.
+
+O tópico de entrada e `candidaturas.realizadas.DLT` têm três partições e replicação 1 para a infraestrutura local de nó único. Não há replay automático da DLT nem expurgo da outbox; a operação deve investigar a causa e preservar o payload/IDs originais ao reenviar. O GET continua PENDENTE se nenhuma avaliação foi gravada, inclusive após falha enviada à DLT.
 
 ## Regras de avaliação
 

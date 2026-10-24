@@ -20,7 +20,7 @@ Empregados retorna `empregadoId`, `matriculaEmpregado`, `nomeEmpregado` e `itens
 
 `GET /api/v1/candidaturas/{candidaturaId}` também retorna `status` (`PENDENTE` ou `AVALIADA`), `elegivel` e `pontuacao`. Esses dois últimos campos são nulos antes da avaliação. O snapshot fica congelado na inscrição; alterações futuras de perfil ou critérios não recalculam inscrições existentes. A avaliação usa as regras da [ADR-005](adr/ADR-005-fluxo-assincrono.md).
 
-`CandidaturaRealizada` é gravado em outbox com a inscrição e publicado por um dispatcher. O consumidor e os demais eventos estão nas etapas seguintes; consultar [acompanhamento](evidencias/fluxo-assincrono.md).
+`CandidaturaRealizada` é gravado em outbox com a inscrição, publicado por um dispatcher e consumido pelo grupo `avaliacao-curricular`. A avaliação usa apenas o snapshot, persiste uma única vez por candidatura/evento e fica disponível no GET da inscrição. `AvaliacaoConcluida` e `ResultadoPublicado` continuam planejados, sem produtores/consumidores implementados; consultar [acompanhamento](evidencias/fluxo-assincrono.md).
 
 | Tópico | Evento | Produtor | Consumidor | Chave |
 | --- | --- | --- | --- | --- |
@@ -29,3 +29,5 @@ Empregados retorna `empregadoId`, `matriculaEmpregado`, `nomeEmpregado` e `itens
 | `vagas.resultados` | `ResultadoPublicado` | vagas-service | candidaturas-service | `vagaId` |
 
 Garantia de entrega: at-least-once. Os consumidores precisam ser idempotentes.
+
+No consumidor implementado, o resultado é gravado antes do retorno do listener e da confirmação do offset. Uma reentrega encontra a avaliação existente e não soma pontos novamente. Falhas transitórias têm três tentativas totais; JSON inválido ou evento divergente do snapshot segue diretamente para `candidaturas.realizadas.DLT`. Os tópicos de entrada e DLT têm três partições no ambiente local. Se o envio à DLT falhar, a recuperação não é considerada concluída. O replay da DLT é manual, com os mesmos IDs, chave e payload após corrigir a causa.
