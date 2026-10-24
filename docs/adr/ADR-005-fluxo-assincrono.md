@@ -35,5 +35,5 @@ O CORE exige produtor, consumidor e idempotência. Candidaturas precisa usar os 
 ## Etapas e evidências
 
 - Etapa 1: consultas HTTP, validação e snapshot persistido. Testes de cliente HTTP e persistência em `candidaturas-service`; resultado em [fluxo-assincrono.md](../evidencias/fluxo-assincrono.md).
-- Etapa 2: outbox e publicador Kafka (pendente).
+- Etapa 2: outbox na mesma transação da candidatura, publicador com confirmação do Kafka e retomada de pendências. O registro é bloqueado por publicação, evitando publicadores concorrentes sobre a mesma linha. A transação mantém esse bloqueio durante o envio, limitado a 12 segundos; é uma escolha simples para o volume do projeto.
 - Etapa 3: consumidor, avaliação e testes de reentrega/concorrência (pendente).

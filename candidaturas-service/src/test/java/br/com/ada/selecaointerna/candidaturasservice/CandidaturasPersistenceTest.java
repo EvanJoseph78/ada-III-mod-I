@@ -29,9 +29,11 @@ class CandidaturasPersistenceTest {
   @Autowired ObjectMapper mapper;
   @Autowired CandidaturaRepository repository;
   @MockitoBean DadosCandidaturaClient dadosClient;
+  @Autowired OutboxRepository outbox;
 
   @BeforeEach
   void preparar() {
+    outbox.deleteAll();
     repository.deleteAll();
     when(dadosClient.obter(any())).thenReturn(new DadosCandidaturaClient.Dados(
         new PerfilProfissionalDto(UUID.randomUUID(), "Ana", List.of(new ItemPerfilDto(TipoItem.CURSO, "Java", 40, null))),
@@ -50,6 +52,7 @@ class CandidaturasPersistenceTest {
     assertThat(evento.candidaturaId()).isEqualTo(id);
     assertThat(evento.perfilSnapshot().itens().getFirst().descricao()).isEqualTo("Java");
     assertThat(evento.criteriosSnapshot().requisitos().getFirst().pontos()).isEqualTo(10);
+    assertThat(outbox.findById(evento.eventId()).orElseThrow().getPayload()).isEqualTo(mapper.writeValueAsString(evento));
     mvc.perform(get("/api/v1/candidaturas/" + id)).andExpect(status().isOk())
         .andExpect(jsonPath("$.matriculaEmpregado").value(123))
         .andExpect(jsonPath("$.realizadaEm").isNotEmpty());
@@ -67,6 +70,7 @@ class CandidaturasPersistenceTest {
           .content("{\"matriculaEmpregado\":123,\"idVaga\":1}"))
           .andExpect(status().is(status.value()));
       assertThat(repository.count()).isZero();
+      assertThat(outbox.count()).isZero();
     }
   }
 

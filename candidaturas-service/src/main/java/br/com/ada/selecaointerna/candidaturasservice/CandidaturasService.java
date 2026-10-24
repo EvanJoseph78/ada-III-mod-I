@@ -18,6 +18,7 @@ public class CandidaturasService {
   private final CandidaturaRepository repository;
   private final DadosCandidaturaClient dadosClient;
   private final ObjectMapper mapper;
+  private final OutboxRepository outboxRepository;
 
   @Transactional
   public CandidaturaOutputDto realizarCandidatura(CandidaturaInputDto input) {
@@ -34,7 +35,9 @@ public class CandidaturasService {
       throw new IllegalStateException("Falha ao serializar snapshots da candidatura", e);
     }
     try {
-      return new CandidaturaOutputDto(repository.saveAndFlush(candidatura));
+      repository.saveAndFlush(candidatura);
+      outboxRepository.saveAndFlush(new OutboxCandidatura(evento.eventId(), candidatura));
+      return new CandidaturaOutputDto(candidatura);
     } catch (DataIntegrityViolationException e) {
       throw new ResponseStatusException(HttpStatus.CONFLICT, "Candidatura ja registrada para empregado e vaga", e);
     }

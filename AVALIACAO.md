@@ -36,6 +36,8 @@ Após o ajuste dos POMs, foram implementados cadastros persistentes de perfil, c
 
 Etapa 1: Candidaturas resolve IDs, valida referências e vaga ABERTA por HTTP e persiste snapshots do evento. Falhas de consulta não gravam a inscrição. A implementação e seus testes estão em [fluxo-assincrono.md](docs/evidencias/fluxo-assincrono.md), com decisão na [ADR-005](docs/adr/ADR-005-fluxo-assincrono.md). Essa etapa isolada ainda não conclui produtor, consumidor ou idempotência.
 
+Etapa 2: produtor via outbox transacional implementado, com 12 testes do módulo aprovados. Há testes de rollback conjunto, falha/retomada de envio e confirmação após ACK. Consumidor e testes com broker são a próxima etapa; o requisito assíncrono ainda não é considerado concluído.
+
 ## Opcionais do grupo
 
 Nenhum. O grupo tem três integrantes, então entrega apenas o CORE; opcionais não são exigidos.

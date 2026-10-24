@@ -1,5 +1,9 @@
 # Uso crítico de IA
 
+## 2026-10-24 — Fluxo assíncrono, etapa 2
+
+A IA implementou outbox transacional e publicação Kafka com confirmação antes da marcação. Foram aprovados 12 testes do módulo, incluindo três cenários de atomicidade e retomada com envio Kafka simulado. Não se apresentou essa simulação como prova de integração com o broker. O consumidor idempotente e a verificação com Kafka real/embarcado pertencem à etapa seguinte.
+
 ## 2026-10-24 — Fluxo assíncrono, etapa 1
 
 O responsável solicitou concluir o fluxo em commits separados e atualizar a documentação. A IA implementou consultas HTTP com timeout, validação das referências/status e snapshots persistidos, com decisões na ADR-005. Foram aprovados nove testes do módulo de Candidaturas em compilação limpa, sem Docker. Nenhum envio Kafka foi considerado concluído nesta etapa. A revisão do diff pelo responsável permanece necessária antes de integrar a branch.

@@ -13,7 +13,22 @@ spring:
       ddl-auto: validate
   flyway:
     enabled: true
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.apache.kafka.common.serialization.StringSerializer
+      acks: all
+      properties:
+        enable.idempotence: true
+        delivery.timeout.ms: 10000
+        request.timeout.ms: 3000
+        max.block.ms: 5000
 integracoes:
   empregados-url: ${EMPREGADOS_SERVICE_URL:http://localhost:8081}
   vagas-url: ${VAGAS_SERVICE_URL:http://localhost:8082}
   timeout-ms: ${INTEGRACOES_TIMEOUT_MS:2000}
+mensageria:
+  enabled: ${MENSAGERIA_ENABLED:true}
+  outbox:
+    intervalo-ms: ${OUTBOX_INTERVALO_MS:1000}

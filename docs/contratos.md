@@ -18,7 +18,7 @@ Empregados retorna `empregadoId`, `matriculaEmpregado`, `nomeEmpregado` e `itens
 
 ## Eventos Kafka
 
-Os eventos abaixo estão definidos nos contratos; os produtores e consumidores ainda não foram implementados.
+`CandidaturaRealizada` é gravado em outbox com a inscrição e publicado por um dispatcher. O consumidor e os demais eventos estão nas etapas seguintes; consultar [acompanhamento](evidencias/fluxo-assincrono.md).
 
 | Tópico | Evento | Produtor | Consumidor | Chave |
 | --- | --- | --- | --- | --- |

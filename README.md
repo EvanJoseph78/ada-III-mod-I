@@ -69,6 +69,8 @@ O roteiro de cadastro, consulta e verificação após reiniciar está em [persis
 
 A inscrição já consulta Empregados e Vagas por HTTP antes de gravar seus snapshots. Configurar em Candidaturas `EMPREGADOS_SERVICE_URL` e `VAGAS_SERVICE_URL` (padrões `http://localhost:8081` e `http://localhost:8082`, sem `/api/v1`) e `INTEGRACOES_TIMEOUT_MS` (padrão 2000 por conexão/leitura). Consultar [contratos](docs/contratos.md) para os códigos de erro e [acompanhamento do fluxo](docs/evidencias/fluxo-assincrono.md) para a etapa atual.
 
+Candidaturas grava uma outbox junto com a inscrição e publica pendências a cada `OUTBOX_INTERVALO_MS` (padrão 1000). Configurar `KAFKA_BOOTSTRAP_SERVERS` (padrão `localhost:9092`). `MENSAGERIA_ENABLED=false` desativa o dispatcher e a criação dos tópicos para uma execução somente HTTP/persistência; a outbox continua sendo gravada para envio posterior. A resposta 201 confirma o registro durável, não a conclusão da avaliação.
+
 Com Docker em execução, na raiz do repositório:
 
 ```sh
