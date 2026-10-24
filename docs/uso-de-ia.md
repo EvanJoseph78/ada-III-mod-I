@@ -1,5 +1,9 @@
 # Uso crítico de IA
 
+## 2026-10-24 — Fluxo assíncrono, etapa 1
+
+O responsável solicitou concluir o fluxo em commits separados e atualizar a documentação. A IA implementou consultas HTTP com timeout, validação das referências/status e snapshots persistidos, com decisões na ADR-005. Foram aprovados nove testes do módulo de Candidaturas em compilação limpa, sem Docker. Nenhum envio Kafka foi considerado concluído nesta etapa. A revisão do diff pelo responsável permanece necessária antes de integrar a branch.
+
 ## Contribuições
 
 Organização do roteiro e criação da estrutura inicial a partir do escopo e do enunciado fornecidos.

@@ -19,6 +19,10 @@ public class Candidatura {
   private Long idVaga;
   @Column(nullable = false)
   private Instant realizadaEm;
+  @Column(columnDefinition = "text")
+  private String eventoCandidatura;
+
+  public void registrarEvento(String evento) { eventoCandidatura = evento; }
 
   public Candidatura(CandidaturaInputDto input) {
     candidaturaId = UUID.randomUUID(); matriculaEmpregado = input.matriculaEmpregado();

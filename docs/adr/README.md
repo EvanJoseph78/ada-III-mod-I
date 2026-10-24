@@ -13,6 +13,8 @@ Usar TEMPLATE.md para cada decisão. Registrar alternativas e trade-offs reais.
 
 ## Decisões pendentes
 
+A [ADR-005 — Snapshots, outbox e avaliação idempotente](ADR-005-fluxo-assincrono.md) foi aceita e está em implementação por etapas.
+
 Decisões a elaborar:
 
 1. Evolução dos limites de domínio da ADR-004 conforme a integração entre serviços.

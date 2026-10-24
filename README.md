@@ -19,7 +19,7 @@ Cada serviço usa sua própria base PostgreSQL e seu próprio usuário. Kafka es
 
 Perfil alvo: **A — Docker em máquina pessoal**.
 
-Estado atual: aplicações Spring Boot 3.5.9 com Java 21, persistência JPA e migrações Flyway para os três bancos PostgreSQL. Há testes de integração com H2 sem Docker. O fluxo entre serviços, Kafka, cache, avaliação e ranking ainda não foi implementado. Os profiles Maven A/B/C continuam como marcadores e não configuram os ambientes.
+Estado atual: aplicações Spring Boot 3.5.9 com Java 21, persistência JPA e migrações Flyway para os três bancos PostgreSQL. Há testes de integração com H2 sem Docker. A inscrição consulta perfil/critérios por HTTP e persiste snapshots. Publicação/consumo Kafka, cache, avaliação e ranking estão em implementação ou pendentes; consultar o acompanhamento por etapas abaixo. Os profiles Maven A/B/C continuam como marcadores e não configuram os ambientes.
 
 ### Build e testes sem Docker
 
@@ -66,6 +66,8 @@ As variáveis aceitas seguem o padrão `EMPREGADOS_DB_URL`, `EMPREGADOS_DB_USER`
 O roteiro de cadastro, consulta e verificação após reiniciar está em [persistencia.md](docs/evidencias/persistencia.md). A integração foi validada com sete testes H2 e com PostgreSQL 17.11, incluindo leitura dos dados após reiniciar os três serviços. A execução a partir de um clone limpo e o fluxo completo entre serviços continuam pendentes.
 
 ### Kafka local
+
+A inscrição já consulta Empregados e Vagas por HTTP antes de gravar seus snapshots. Configurar em Candidaturas `EMPREGADOS_SERVICE_URL` e `VAGAS_SERVICE_URL` (padrões `http://localhost:8081` e `http://localhost:8082`, sem `/api/v1`) e `INTEGRACOES_TIMEOUT_MS` (padrão 2000 por conexão/leitura). Consultar [contratos](docs/contratos.md) para os códigos de erro e [acompanhamento do fluxo](docs/evidencias/fluxo-assincrono.md) para a etapa atual.
 
 Com Docker em execução, na raiz do repositório:
 

@@ -13,3 +13,7 @@ spring:
       ddl-auto: validate
   flyway:
     enabled: true
+integracoes:
+  empregados-url: ${EMPREGADOS_SERVICE_URL:http://localhost:8081}
+  vagas-url: ${VAGAS_SERVICE_URL:http://localhost:8082}
+  timeout-ms: ${INTEGRACOES_TIMEOUT_MS:2000}

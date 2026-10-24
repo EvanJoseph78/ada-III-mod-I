@@ -14,7 +14,7 @@ As consultas básicas existentes usam matrícula (`GET /api/v1/empregados/{matri
 
 Empregados retorna `empregadoId`, `matriculaEmpregado`, `nomeEmpregado` e `itens`; os nomes provisórios `matricula` e `nome` da implementação intermediária foram substituídos por essa convenção. As rotas `GET /api/v1/empregados/{matriculaEmpregado}/curriculo-profissional` e `/curriculo-educacional` usam a mesma resposta, filtrando `itens`: experiências internas/externas na primeira, cursos/diplomas/certificações na segunda. Ambas retornam 404 para matrícula inexistente.
 
-`POST /api/v1/candidaturas` recebe `matriculaEmpregado` e `idVaga` numéricos e persiste o registro, com UUID `candidaturaId` e data. `GET /api/v1/candidaturas/{candidaturaId}` consulta esse registro. Duplicata de matrícula/vaga retorna 409. A resolução das referências, validação de existência/abertura da vaga e captura dos snapshots para o evento ainda serão implementadas na integração entre serviços.
+`POST /api/v1/candidaturas` recebe `matriculaEmpregado` e `idVaga` numéricos, resolve UUIDs por HTTP e consulta perfil/critérios. Retorna 201 ao persistir a inscrição com snapshots; duplicata ou vaga não aberta retorna 409, referência inexistente retorna 422, falha/timeout remoto retorna 503 e resposta inconsistente retorna 502. Nenhuma inscrição é gravada quando essas consultas falham. `GET /api/v1/candidaturas/{candidaturaId}` consulta o registro. Inscrições antigas sem snapshot continuam consultáveis e não são publicadas retroativamente.
 
 ## Eventos Kafka
 

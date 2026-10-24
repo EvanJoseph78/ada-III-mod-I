@@ -1,0 +1,39 @@
+# ADR-005 — Snapshots, outbox e avaliação idempotente
+
+Status: aceita; implementação em etapas
+Data: 2026-10-24
+
+## Contexto
+
+O CORE exige produtor, consumidor e idempotência. Candidaturas precisa usar os dados de Empregados e Vagas sem acessar seus bancos. A gravação da inscrição e a publicação no Kafka podem falhar em momentos diferentes. Mensagens entregues novamente não podem duplicar avaliações.
+
+## Decisão
+
+1. Resolver matrícula/ID numérico por HTTP e consultar os contratos de perfil/critérios por UUID, com timeout configurável. Aceitar apenas vaga ABERTA e snapshots consistentes com os IDs consultados.
+2. Persistir o JSON de `CandidaturaRealizada` com os snapshots e IDs estáveis. O evento representa os dados observados no instante da consulta; não há transação distribuída que impeça uma alteração simultânea em Vagas.
+3. Gravar uma outbox na mesma transação da candidatura. Um publicador confirma o envio no Kafka antes de marcar o registro como publicado. Falhas preservam a pendência para nova tentativa.
+4. Usar entrega at-least-once: uma falha após o ACK e antes da marcação pode produzir duplicatas. O consumidor deve persistir uma única avaliação por candidatura, em transação local, com identificação do evento e proteção contra concorrência.
+5. Calcular pontos uma vez por requisito atendido; requisito obrigatório não atendido torna a candidatura inelegível. O consumidor usa os snapshots, sem novas consultas HTTP.
+
+## Alternativas consideradas
+
+| Alternativa | Benefício | Custo ou motivo de descarte |
+| --- | --- | --- |
+| Publicar diretamente depois de gravar | Poucos componentes | Pode perder o evento se o processo cair entre as operações |
+| Transação distribuída banco/Kafka | Coordenação explícita | Complexidade desproporcional ao projeto; não é necessária para entrega at-least-once |
+| Consultar perfil/critérios na avaliação | Menor mensagem | Resultado dependeria de alterações posteriores, dificultando a reprodução |
+| Deduplicar só em memória | Simplicidade | Perde proteção após reinício e não coordena consumidores concorrentes |
+
+## Consequências e limites
+
+- Há mais tabelas e um publicador de pendências, mas a publicação pode ser retomada após falhas.
+- O evento mantém dados profissionais; evitar registrar payloads completos em logs e revisar retenção conforme o uso real.
+- Inscrições anteriores à migração de snapshots permanecem consultáveis, sem publicação retroativa inventando dados históricos.
+- Unicidade de inscrição e idempotência de consumidor são verificações diferentes.
+- Pact de `ResultadoPublicado`, cache e publicação do resultado da vaga são outras entregas; não ficam concluídos por esta decisão.
+
+## Etapas e evidências
+
+- Etapa 1: consultas HTTP, validação e snapshot persistido. Testes de cliente HTTP e persistência em `candidaturas-service`; resultado em [fluxo-assincrono.md](../evidencias/fluxo-assincrono.md).
+- Etapa 2: outbox e publicador Kafka (pendente).
+- Etapa 3: consumidor, avaliação e testes de reentrega/concorrência (pendente).

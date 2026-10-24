@@ -1,6 +1,9 @@
 package br.com.ada.selecaointerna.candidaturasservice;
 
 import java.util.UUID;
+import br.com.ada.selecaointerna.contracts.CandidaturaRealizada;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -13,11 +16,25 @@ import org.springframework.web.server.ResponseStatusException;
 @Transactional(readOnly = true)
 public class CandidaturasService {
   private final CandidaturaRepository repository;
+  private final DadosCandidaturaClient dadosClient;
+  private final ObjectMapper mapper;
 
   @Transactional
   public CandidaturaOutputDto realizarCandidatura(CandidaturaInputDto input) {
+    if (repository.existsByMatriculaEmpregadoAndIdVaga(input.matriculaEmpregado(), input.idVaga())) {
+      throw new ResponseStatusException(HttpStatus.CONFLICT, "Candidatura ja registrada para empregado e vaga");
+    }
+    DadosCandidaturaClient.Dados dados = dadosClient.obter(input);
+    Candidatura candidatura = new Candidatura(input);
+    CandidaturaRealizada evento = new CandidaturaRealizada(UUID.randomUUID(), candidatura.getRealizadaEm(),
+        candidatura.getCandidaturaId(), dados.criterios().vagaId(), dados.perfil().empregadoId(), dados.perfil(), dados.criterios());
     try {
-      return new CandidaturaOutputDto(repository.saveAndFlush(new Candidatura(input)));
+      candidatura.registrarEvento(mapper.writeValueAsString(evento));
+    } catch (JsonProcessingException e) {
+      throw new IllegalStateException("Falha ao serializar snapshots da candidatura", e);
+    }
+    try {
+      return new CandidaturaOutputDto(repository.saveAndFlush(candidatura));
     } catch (DataIntegrityViolationException e) {
       throw new ResponseStatusException(HttpStatus.CONFLICT, "Candidatura ja registrada para empregado e vaga", e);
     }

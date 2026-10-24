@@ -32,6 +32,10 @@ Essa verificação foi executada pela IA e comprova compilação e empacotamento
 
 Após o ajuste dos POMs, foram implementados cadastros persistentes de perfil, critérios de vaga e candidatura. `mvn clean verify` passou com seis testes de integração sem Docker, aplicando migrações Flyway e validando o schema no H2. Ver [resultado, limites e roteiro PostgreSQL](docs/evidencias/persistencia.md). Na integração de 2026-10-24, o build passou com sete testes, e os três serviços foram validados com PostgreSQL 17.11, inclusive após reiniciar as aplicações. O fluxo completo entre serviços e o teste de contrato continuam pendentes.
 
-## Opcionais entregues
+## Evolução — fluxo assíncrono por etapas (2026-10-24)
+
+Etapa 1: Candidaturas resolve IDs, valida referências e vaga ABERTA por HTTP e persiste snapshots do evento. Falhas de consulta não gravam a inscrição. A implementação e seus testes estão em [fluxo-assincrono.md](docs/evidencias/fluxo-assincrono.md), com decisão na [ADR-005](docs/adr/ADR-005-fluxo-assincrono.md). Essa etapa isolada ainda não conclui produtor, consumidor ou idempotência.
+
+## Opcionais do grupo
 
 Nenhum. O grupo tem três integrantes, então entrega apenas o CORE; opcionais não são exigidos.
