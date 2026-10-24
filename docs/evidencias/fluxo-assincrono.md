@@ -21,3 +21,11 @@ O produtor usa strings JSON, `acks=all` e idempotência do cliente Kafka; isso n
 `OutboxPublicacaoTest` usa H2 e simula a confirmação/falha do Kafka para verificar marcação após ACK, reenvio com payload estável e rollback da inscrição quando a escrita da outbox falha. Esses testes não comprovam comunicação com um broker; essa verificação pertence à etapa 3.
 
 Validação executada pela IA: `mvn -o -pl candidaturas-service -am clean verify`, `BUILD SUCCESS`, 12 testes de Candidaturas aprovados (nove da etapa 1 e três de outbox).
+
+## Etapa 3 — cálculo e idempotência persistente
+
+Implementado: migração V4 e avaliação única por candidatura, com unicidade de evento, conferência do snapshot original e bloqueio pessimista. O GET da inscrição passa a expor status, elegibilidade e pontuação. As regras estão na ADR-005.
+
+`AvaliadorCurricularTest` verifica múltiplos itens para o mesmo requisito, obrigatórios/opcionais, duração mínima e overflow. `AvaliacaoIdempotenciaTest` verifica reentrega sem repetir cálculo ou alterar a data, duas transações concorrentes, rejeição de evento divergente e recuperação após falha transitória. Ainda não é um teste de reentrega pelo Kafka: o listener e os testes com broker vêm na etapa 4.
+
+Validação executada pela IA: `mvn -o -pl candidaturas-service -am clean verify`, `BUILD SUCCESS`, 21 testes de Candidaturas aprovados (12 anteriores, cinco de regras e quatro de idempotência).

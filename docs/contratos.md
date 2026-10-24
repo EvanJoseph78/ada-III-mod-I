@@ -18,6 +18,8 @@ Empregados retorna `empregadoId`, `matriculaEmpregado`, `nomeEmpregado` e `itens
 
 ## Eventos Kafka
 
+`GET /api/v1/candidaturas/{candidaturaId}` também retorna `status` (`PENDENTE` ou `AVALIADA`), `elegivel` e `pontuacao`. Esses dois últimos campos são nulos antes da avaliação. O snapshot fica congelado na inscrição; alterações futuras de perfil ou critérios não recalculam inscrições existentes. A avaliação usa as regras da [ADR-005](adr/ADR-005-fluxo-assincrono.md).
+
 `CandidaturaRealizada` é gravado em outbox com a inscrição e publicado por um dispatcher. O consumidor e os demais eventos estão nas etapas seguintes; consultar [acompanhamento](evidencias/fluxo-assincrono.md).
 
 | Tópico | Evento | Produtor | Consumidor | Chave |

@@ -1,5 +1,9 @@
 # Uso crítico de IA
 
+## 2026-10-24 — Fluxo assíncrono, etapa 3
+
+A IA implementou regras determinísticas de pontuação e avaliação única por candidatura, preservando o snapshot original. A verificação sem Docker aprovou 21 testes do módulo, incluindo reentrega e entregas concorrentes em transações reais H2. A documentação distingue essa prova de persistência da prova de consumo Kafka, que será feita na etapa seguinte. A regra de correspondência por tipo/palavra-chave/duração é explícita na ADR-005 e deve ser conferida pelo grupo.
+
 ## 2026-10-24 — Fluxo assíncrono, etapa 2
 
 A IA implementou outbox transacional e publicação Kafka com confirmação antes da marcação. Foram aprovados 12 testes do módulo, incluindo três cenários de atomicidade e retomada com envio Kafka simulado. Não se apresentou essa simulação como prova de integração com o broker. O consumidor idempotente e a verificação com Kafka real/embarcado pertencem à etapa seguinte.

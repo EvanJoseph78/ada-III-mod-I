@@ -22,12 +22,14 @@ class OutboxPublicacaoTest {
   @Autowired CandidaturasService candidaturas;
   @Autowired CandidaturaRepository repository;
   @Autowired PublicacaoOutboxService publicacao;
+  @Autowired AvaliacaoRepository avaliacoes;
   @MockitoSpyBean OutboxRepository outbox;
   @MockitoBean DadosCandidaturaClient dadosClient;
   @MockitoBean KafkaTemplate<String, String> kafka;
 
   @BeforeEach
   void preparar() {
+    avaliacoes.deleteAll();
     outbox.deleteAll();
     repository.deleteAll();
     when(dadosClient.obter(any())).thenReturn(new DadosCandidaturaClient.Dados(

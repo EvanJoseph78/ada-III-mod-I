@@ -36,4 +36,13 @@ O CORE exige produtor, consumidor e idempotência. Candidaturas precisa usar os 
 
 - Etapa 1: consultas HTTP, validação e snapshot persistido. Testes de cliente HTTP e persistência em `candidaturas-service`; resultado em [fluxo-assincrono.md](../evidencias/fluxo-assincrono.md).
 - Etapa 2: outbox na mesma transação da candidatura, publicador com confirmação do Kafka e retomada de pendências. O registro é bloqueado por publicação, evitando publicadores concorrentes sobre a mesma linha. A transação mantém esse bloqueio durante o envio, limitado a 12 segundos; é uma escolha simples para o volume do projeto.
-- Etapa 3: consumidor, avaliação e testes de reentrega/concorrência (pendente).
+- Etapa 3: cálculo e persistência idempotente da avaliação. Bloqueio pessimista da candidatura coordena entregas concorrentes; a avaliação tem PK `candidaturaId` e unicidade de `eventId`. O evento recebido deve coincidir com o snapshot original persistido, pois é interno a Candidaturas. Resultado e deduplicação são a mesma gravação transacional; falha antes do commit permite nova tentativa.
+- Etapa 4: conectar o listener Kafka e comprovar o fluxo com broker, retries e mensagens inválidas (pendente).
+
+## Regras de avaliação
+
+Um requisito é atendido quando há pelo menos um item do mesmo `TipoItem`, com descrição contendo a palavra-chave (sem diferenciar maiúsculas/minúsculas, sem busca semântica) e meses suficientes, caso exigidos. A duração é verificada no mesmo item; não se somam experiências distintas. Horas não entram na pontuação porque o contrato atual não define horas mínimas.
+
+Cada requisito atendido soma seus pontos uma vez, mesmo com vários itens correspondentes. Um obrigatório ausente torna a candidatura inelegível e sua pontuação final é zero. Opcionais ausentes não desclassificam. Sem requisitos, o resultado é elegível com zero pontos. Soma acima do limite inteiro é rejeitada como dado inválido, sem gravar resultado negativo.
+
+O GET da candidatura retorna `status` PENDENTE ou AVALIADA, com `elegivel` e `pontuacao` nulos enquanto não houver resultado. A avaliação não representa publicação do resultado da vaga e ainda não emite `AvaliacaoConcluida`; esse segundo evento e ranking/cache serão tratados em outra entrega.

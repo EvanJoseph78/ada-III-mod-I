@@ -38,6 +38,8 @@ Etapa 1: Candidaturas resolve IDs, valida referências e vaga ABERTA por HTTP e 
 
 Etapa 2: produtor via outbox transacional implementado, com 12 testes do módulo aprovados. Há testes de rollback conjunto, falha/retomada de envio e confirmação após ACK. Consumidor e testes com broker são a próxima etapa; o requisito assíncrono ainda não é considerado concluído.
 
+Etapa 3: avaliação e deduplicação transacionais implementadas, com resultado consultável e testes de reentrega/concorrência; 21 testes do módulo aprovados. A conexão do consumidor ao Kafka e a verificação com broker seguem na etapa 4, antes de marcar o requisito completo.
+
 ## Opcionais do grupo
 
 Nenhum. O grupo tem três integrantes, então entrega apenas o CORE; opcionais não são exigidos.

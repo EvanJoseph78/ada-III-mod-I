@@ -30,9 +30,11 @@ class CandidaturasPersistenceTest {
   @Autowired CandidaturaRepository repository;
   @MockitoBean DadosCandidaturaClient dadosClient;
   @Autowired OutboxRepository outbox;
+  @Autowired AvaliacaoRepository avaliacoes;
 
   @BeforeEach
   void preparar() {
+    avaliacoes.deleteAll();
     outbox.deleteAll();
     repository.deleteAll();
     when(dadosClient.obter(any())).thenReturn(new DadosCandidaturaClient.Dados(

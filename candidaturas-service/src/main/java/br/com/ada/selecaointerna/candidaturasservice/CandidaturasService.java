@@ -19,6 +19,7 @@ public class CandidaturasService {
   private final DadosCandidaturaClient dadosClient;
   private final ObjectMapper mapper;
   private final OutboxRepository outboxRepository;
+  private final AvaliacaoRepository avaliacaoRepository;
 
   @Transactional
   public CandidaturaOutputDto realizarCandidatura(CandidaturaInputDto input) {
@@ -44,7 +45,8 @@ public class CandidaturasService {
   }
 
   public CandidaturaOutputDto obterCandidatura(UUID id) {
-    return repository.findById(id).map(CandidaturaOutputDto::new)
+    return repository.findById(id).map(candidatura -> new CandidaturaOutputDto(candidatura,
+        avaliacaoRepository.findById(id).orElse(null)))
         .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Candidatura nao encontrada"));
   }
 }
