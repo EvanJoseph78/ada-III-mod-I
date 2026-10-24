@@ -1,5 +1,9 @@
 # Uso crítico de IA
 
+## 2026-10-24 — Cache, etapa 1
+
+O responsável solicitou concluir cache com estratégia/invalidação explícitas e commits separados. A IA começou pela fonte de dados: ranking parcial de avaliações elegíveis, ordenação determinística e endpoint HTTP. Dois testes H2/HTTP foram aprovados em compilação limpa. A ADR-006 distingue a consulta pronta da camada Redis ainda pendente e registra a escolha de cache-aside com revisão por vaga, condicionada a avaliações imutáveis e somente inseridas.
+
 ## 2026-10-24 — Fluxo assíncrono, etapa 4
 
 Conforme a solicitação de concluir produtor/consumidor/idempotência em etapas, a IA conectou o listener, configurou retry exponencial e DLT e adicionou quatro testes com broker KRaft embarcado. O build completo aprovou 30 testes sem Docker. Também foram executadas consultas HTTP reais entre os três serviços, publicação/consumo no Kafka local, persistência PostgreSQL e reentrega após encerrar a instância anterior e iniciar outra de Candidaturas. Um helper local aguardou o offset confirmado e verificou que quantidade, pontuação e data da avaliação permaneceram iguais.

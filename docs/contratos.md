@@ -18,6 +18,10 @@ Empregados retorna `empregadoId`, `matriculaEmpregado`, `nomeEmpregado` e `itens
 
 ## Eventos Kafka
 
+### Ranking parcial
+
+`GET /api/v1/candidaturas/ranking/{vagaId}` recebe UUID e retorna `vagaId` e `classificados`, com posição, candidaturaId, empregadoId, matrícula, pontuação e data de inscrição. Inclui apenas avaliados elegíveis; ordem: pontos decrescentes, inscrição crescente e UUID crescente. Sem resultados locais, retorna 200 com lista vazia, sem afirmar existência da vaga. UUID inválido retorna 400. Esse ranking não equivale a resultado publicado.
+
 `GET /api/v1/candidaturas/{candidaturaId}` também retorna `status` (`PENDENTE` ou `AVALIADA`), `elegivel` e `pontuacao`. Esses dois últimos campos são nulos antes da avaliação. O snapshot fica congelado na inscrição; alterações futuras de perfil ou critérios não recalculam inscrições existentes. A avaliação usa as regras da [ADR-005](adr/ADR-005-fluxo-assincrono.md).
 
 `CandidaturaRealizada` é gravado em outbox com a inscrição, publicado por um dispatcher e consumido pelo grupo `avaliacao-curricular`. A avaliação usa apenas o snapshot, persiste uma única vez por candidatura/evento e fica disponível no GET da inscrição. `AvaliacaoConcluida` e `ResultadoPublicado` continuam planejados, sem produtores/consumidores implementados; consultar [acompanhamento](evidencias/fluxo-assincrono.md).

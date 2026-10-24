@@ -42,6 +42,10 @@ Etapa 3: avaliação e deduplicação transacionais implementadas, com resultado
 
 Etapa 4: listener Kafka, retry/DLT e verificação ponta a ponta concluídos. `mvn -o clean verify` passou com 30 testes; execução real com os três serviços, PostgreSQL e Kafka confirmou avaliação e reentrega após reiniciar Candidaturas. O requisito de um fluxo assíncrono com produtor, consumidor e idempotência está atendido nesta branch. Ranking/cache e Pact permanecem pendentes.
 
-## Opcionais do grupo
+## Evolução — ranking e cache por etapas
+
+Etapa 1: endpoint de ranking parcial implementado, com dois testes de filtro/ordenação e resposta HTTP aprovados. Essa etapa ainda não utiliza cache. Decisão na [ADR-006](docs/adr/ADR-006-cache-ranking.md) e evidência em [cache-ranking.md](docs/evidencias/cache-ranking.md).
+
+## Opcionais (grupo de três integrantes)
 
 Nenhum. O grupo tem três integrantes, então entrega apenas o CORE; opcionais não são exigidos.

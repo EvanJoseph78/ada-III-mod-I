@@ -13,11 +13,13 @@ Usar TEMPLATE.md para cada decisão. Registrar alternativas e trade-offs reais.
 
 ## Decisões pendentes
 
+A [ADR-006 — Ranking e cache](ADR-006-cache-ranking.md) está aceita e em implementação por etapas.
+
 Decisões a elaborar:
 
 1. Evolução dos limites de domínio da ADR-004 conforme a integração entre serviços.
 2. Publicação de resultado e contrato executável entre serviços; entrega e idempotência da candidatura estão na ADR-005.
-3. Cache: tecnologia, TTL, invalidação e fallback.
+3. Concluir cache, TTL, invalidação e fallback definidos na ADR-006.
 4. Implementação e validação da estratégia de testes da ADR-002.
 
 As decisões pendentes acima ainda precisam ser discutidas e registradas em ADRs próprias.
