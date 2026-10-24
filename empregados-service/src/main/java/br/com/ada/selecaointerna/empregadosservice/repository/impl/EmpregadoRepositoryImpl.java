@@ -4,53 +4,34 @@ import br.com.ada.selecaointerna.empregadosservice.entity.domain.Empregado;
 import br.com.ada.selecaointerna.empregadosservice.entity.infra.EmpregadoEntity;
 import br.com.ada.selecaointerna.empregadosservice.repository.EmpregadoRepository;
 import br.com.ada.selecaointerna.empregadosservice.repository.jpa.EmpregadoRepositoryJPA;
-import org.springframework.beans.factory.annotation.Autowired;
-
-import java.util.ArrayList;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Repository;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
+@Repository
+@RequiredArgsConstructor
 public class EmpregadoRepositoryImpl implements EmpregadoRepository {
+  private final EmpregadoRepositoryJPA jpaRepository;
 
-    @Autowired
-    EmpregadoRepositoryJPA jpaRepository;
+  @Override
+  public Empregado salvarEmpregado(Empregado empregado) {
+    return jpaRepository.saveAndFlush(new EmpregadoEntity(empregado)).toDomain();
+  }
 
-    @Override
-    public void salvarEmpregado(Empregado empregado) {
-        EmpregadoEntity entity = toEntity(empregado);
-        jpaRepository.save(entity);
-    }
+  @Override
+  public Optional<Empregado> buscarPorMatricula(Long matricula) {
+    return jpaRepository.findByMatriculaEmpregado(matricula).map(EmpregadoEntity::toDomain);
+  }
 
-    @Override
-    public Empregado buscarPorMatricula(Long matricula) {
-        Optional<EmpregadoEntity> empregadoEntity = jpaRepository.findByMatricula(matricula);
-        if(empregadoEntity.isEmpty()){
-            throw new RuntimeException("Não encontrado empregado com essa matricula.");
-        }
-        return toDomain(empregadoEntity.get());
-    }
+  @Override
+  public Optional<Empregado> buscarPorId(UUID id) {
+    return jpaRepository.findById(id).map(EmpregadoEntity::toDomain);
+  }
 
-    @Override
-    public List<Empregado> buscarTodos() {
-        List<EmpregadoEntity> entityList = jpaRepository.findAll();
-        List<Empregado> empregados = new ArrayList<>();
-        for(EmpregadoEntity entity : entityList){
-            empregados.add(toDomain(entity));
-        }
-        return empregados;
-    }
-
-    EmpregadoEntity toEntity(Empregado empregado){
-        return new EmpregadoEntity(
-                empregado.getMatricula(),
-                empregado.getNome()
-        );
-    }
-
-    Empregado toDomain(EmpregadoEntity entity){
-        return new Empregado(
-                entity.getMatricula(),
-                entity.getNome()
-        );
-    }
+  @Override
+  public List<Empregado> buscarTodos() {
+    return jpaRepository.findAll().stream().map(EmpregadoEntity::toDomain).toList();
+  }
 }

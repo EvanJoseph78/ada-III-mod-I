@@ -21,3 +21,19 @@ Registrar para cada contribuição relevante: tarefa, sugestão da IA, decisão 
 - **Correções de escopo:** mudanças de código e testes inicialmente adicionados pela IA foram removidos antes da validação final.
 - **Verificação pela IA:** `mvn -o clean verify` na raiz, sem Docker, com sucesso em todos os módulos após a remoção das alterações funcionais. Não havia testes automatizados na versão final; build aprovado não comprova regras de negócio, integração ou compatibilidade dos contratos.
 - **Revisão humana pendente:** conferir o diff final e revisar com o grupo as consequências da herança compartilhada antes do merge. Não se atribui ao grupo execução manual das verificações realizadas pela IA.
+
+### 2026-10-22 — Persistência mínima dos serviços
+
+- **Tarefa:** preparar a primeira etapa funcional do CORE: empregado com perfil, vaga com requisitos e candidatura registrada em bancos separados.
+- **Decisão humana:** o responsável autorizou assumir a implementação nesta etapa, ampliando o escopo antes limitado aos POMs. A divisão com o autor inicial deve ser alinhada pelo responsável.
+- **Sugestão e implementação pela IA:** JPA, migrações Flyway por serviço, validação de entradas e restrições únicas; preservação das entradas numéricas e adição de UUIDs para os contratos. Decisões e alternativas estão na [ADR-004](adr/ADR-004-persistencia-por-servico.md).
+- **Verificação pela IA:** build completo e seis testes HTTP/JPA em H2 aprovados sem Docker; detalhes em [persistencia.md](evidencias/persistencia.md).
+- **Limites e revisão pendente:** Docker não estava disponível nesta sessão. O grupo deve executar o roteiro PostgreSQL e conferir a permanência dos dados após reiniciar. A candidatura ainda não valida referências externas nem publica eventos. Não tratar unicidade de inscrição como evidência de consumidor idempotente.
+
+### 2026-10-24 — Integração da persistência na develop
+
+- **Decisão humana:** integrar `feat/persistencia-dados` na `develop` antes de considerar o merge para `main`.
+- **Trabalho da IA:** resolver sobreposições preservando a organização em camadas de empregados, adaptar o domínio e o repositório à persistência com UUID/perfil, remover classes e dependência JPA duplicadas e manter os contratos de entrada/saída documentados.
+- **Evolução funcional:** as rotas de currículo do colaborador passaram a filtrar experiências ou formação; foi acrescentado um teste de integração para esse comportamento.
+- **Validação pela IA:** `mvn -o clean verify` aprovado com sete testes. Os três serviços iniciaram com PostgreSQL 17.11; cadastro, leitura, currículo filtrado, duplicata 409 e permanência dos dados após reiniciar os processos foram conferidos por HTTP. O banco já estava disponível; não foi necessário instalar Docker nem apagar volumes.
+- **Limites:** o resultado não comprova Kafka, cache, Pact, consumidor idempotente ou execução a partir de clone limpo. Evidências em [persistencia.md](evidencias/persistencia.md). Revisão do diff pelo grupo e publicação no remoto continuam a cargo do responsável.

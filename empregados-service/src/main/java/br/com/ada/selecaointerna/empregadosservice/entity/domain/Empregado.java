@@ -1,17 +1,8 @@
 package br.com.ada.selecaointerna.empregadosservice.entity.domain;
 
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import java.util.List;
+import java.util.UUID;
 
-@Data
-@Builder
-@AllArgsConstructor
-@NoArgsConstructor
-public class Empregado {
-
-  private Long matricula;
-  private String nome;
-
+public record Empregado(UUID empregadoId, Long matricula, String nome, List<ItemPerfil> itens) {
+  public Empregado { itens = List.copyOf(itens); }
 }

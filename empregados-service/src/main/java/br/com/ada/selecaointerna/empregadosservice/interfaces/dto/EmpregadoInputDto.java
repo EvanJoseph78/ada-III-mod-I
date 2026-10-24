@@ -1,11 +1,13 @@
 package br.com.ada.selecaointerna.empregadosservice.interfaces.dto;
 
-import lombok.Data;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.*;
+import java.util.List;
 
-@Data
-public class EmpregadoInputDto {
-
-  private Long matriculaEmpregado;
-  private String nomeEmpregado;
-
+public record EmpregadoInputDto(@NotNull @Positive Long matriculaEmpregado,
+                               @NotBlank @Size(max = 255) String nomeEmpregado,
+                               List<@NotNull @Valid ItemPerfilInput> itens) {
+  public EmpregadoInputDto {
+    itens = itens == null ? List.of() : itens;
+  }
 }

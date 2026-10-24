@@ -1,0 +1,15 @@
+server:
+  port: ${SERVER_PORT:8083}
+spring:
+  application:
+    name: candidaturas-service
+  datasource:
+    url: ${CANDIDATURAS_DB_URL:jdbc:postgresql://localhost:5432/candidaturas}
+    username: ${CANDIDATURAS_DB_USER:candidaturas_svc}
+    password: ${CANDIDATURAS_DB_PASSWORD:candidaturas-local}
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate
+  flyway:
+    enabled: true
