@@ -13,3 +13,7 @@ Etapa 1 validada: quatro testes aprovados, incluindo HTTP em voo bloqueado pelo 
 POST /api/v1/vagas/{vagaId}/encerramento chama a barreira local de Candidaturas e avança ABERTA para EM_AVALIACAO. Repetição é permitida nesse estado; falha remota preserva o estado anterior e permite recuperação por repetição. Exclusão de vaga fora de ABERTA retorna 409, coordenada pelo mesmo bloqueio do estado. Timeouts HTTP configuráveis; sem consulta direta a outro banco.
 
 Onze testes direcionados aprovados: dois de fechamento, dois de persistência e sete interações Pact. Publicação Kafka entra na próxima etapa.
+
+## 3. Outbox de resultados em Vagas
+
+Migração V2, produtor String/JSON com chave vagaId e dispatcher implementados. Três testes aprovados: confirmação somente após ACK, falha/retomada preservando payload e participação na transação chamadora. MENSAGERIA_ENABLED=false desliga o dispatcher/criação do tópico, sem deixar de persistir intenções. A conexão com o comando de publicação entra na etapa 4.
