@@ -21,3 +21,7 @@ Migração V2, produtor String/JSON com chave vagaId e dispatcher implementados.
 ## 4. Comandos de publicação e conclusão
 
 POST /api/v1/vagas/{vagaId}/resultado exige EM_AVALIACAO e prontidão remota, grava status/outbox na mesma transação e responde 202. Repetição/conclusão prematura/transição inválida retornam 409. POST /api/v1/vagas/{vagaId}/conclusao avança RESULTADO_PUBLICADO para CONCLUIDA. Quatro testes aprovados, incluindo publicação concorrente com apenas uma outbox e rollback do status quando o registro da intenção falha. Conclusão é administrativa: não significa confirmação de consumo remoto.
+
+## 5. Resultado definitivo em Candidaturas
+
+Consumidor de vagas.resultados e GET /api/v1/candidaturas/resultados/{vagaId} implementados. O consumidor bloqueia o processo fechado, confere prontidão e grava snapshot do ranking diretamente do banco. Reentrega idêntica preserva evento/data/resultado; divergência é rejeitada. Quatro testes aprovados: concorrência/replay, avaliação pendente com retomada, rollback/resultado vazio e eventos inválidos. A leitura definitiva não usa Redis nem altera o contrato do ranking parcial em cache. Integração com broker e fluxo entre serviços será verificada a seguir.

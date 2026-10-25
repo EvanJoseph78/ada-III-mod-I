@@ -47,6 +47,7 @@ integracoes:
 mensageria:
   enabled: ${MENSAGERIA_ENABLED:true}
   grupo-avaliacao: ${AVALIACAO_CONSUMER_GROUP:avaliacao-curricular}
+  grupo-resultados: ${RESULTADO_CONSUMER_GROUP:resultados-publicados}
   retry:
     intervalo-ms: ${AVALIACAO_RETRY_INTERVALO_MS:1000}
   outbox:

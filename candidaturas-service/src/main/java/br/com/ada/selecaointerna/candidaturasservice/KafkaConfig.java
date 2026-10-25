@@ -31,6 +31,16 @@ public class KafkaConfig {
   }
 
   @Bean
+  NewTopic resultadosPublicados() {
+    return TopicBuilder.name(Topicos.VAGAS_RESULTADOS).partitions(3).replicas(1).build();
+  }
+
+  @Bean
+  NewTopic resultadosInvalidos() {
+    return TopicBuilder.name(Topicos.VAGAS_RESULTADOS + ".DLT").partitions(3).replicas(1).build();
+  }
+
+  @Bean
   DefaultErrorHandler avaliacaoErrorHandler(KafkaTemplate<String, String> kafka,
       @Value("${mensageria.retry.intervalo-ms:1000}") long intervalo) {
     DeadLetterPublishingRecoverer recoverer = new DeadLetterPublishingRecoverer(kafka,
