@@ -17,3 +17,7 @@ Onze testes direcionados aprovados: dois de fechamento, dois de persistência e 
 ## 3. Outbox de resultados em Vagas
 
 Migração V2, produtor String/JSON com chave vagaId e dispatcher implementados. Três testes aprovados: confirmação somente após ACK, falha/retomada preservando payload e participação na transação chamadora. MENSAGERIA_ENABLED=false desliga o dispatcher/criação do tópico, sem deixar de persistir intenções. A conexão com o comando de publicação entra na etapa 4.
+
+## 4. Comandos de publicação e conclusão
+
+POST /api/v1/vagas/{vagaId}/resultado exige EM_AVALIACAO e prontidão remota, grava status/outbox na mesma transação e responde 202. Repetição/conclusão prematura/transição inválida retornam 409. POST /api/v1/vagas/{vagaId}/conclusao avança RESULTADO_PUBLICADO para CONCLUIDA. Quatro testes aprovados, incluindo publicação concorrente com apenas uma outbox e rollback do status quando o registro da intenção falha. Conclusão é administrativa: não significa confirmação de consumo remoto.

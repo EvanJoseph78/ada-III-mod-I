@@ -46,4 +46,12 @@ public class VagasController {
   @PostMapping("/{id}/encerramento")
   public VagaOutputDto encerrarInscricoes(@PathVariable UUID id) { return service.encerrarInscricoes(id); }
 
+  @PostMapping("/{id}/resultado")
+  public ResponseEntity<VagaOutputDto> publicarResultado(@PathVariable UUID id) {
+    return ResponseEntity.accepted().body(service.publicarResultado(id));
+  }
+
+  @PostMapping("/{id}/conclusao")
+  public VagaOutputDto concluir(@PathVariable UUID id) { return service.concluir(id); }
+
 }

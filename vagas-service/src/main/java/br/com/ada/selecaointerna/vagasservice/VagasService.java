@@ -16,6 +16,7 @@ import java.util.UUID;
 public class VagasService {
   private final VagaRepository repository;
   private final ProcessoCandidaturasClient candidaturas;
+  private final ResultadoPublicador resultados;
 
   public List<VagaOutputDto> obterTodasVagas() {
     return repository.findAll().stream().map(VagaOutputDto::new).toList();
@@ -59,6 +60,28 @@ public class VagasService {
   private Vaga bloquear(UUID id) {
     return repository.bloquear(id)
         .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Vaga nao encontrada"));
+  }
+
+  @Transactional
+  public VagaOutputDto publicarResultado(UUID id) {
+    Vaga vaga = bloquear(id);
+    exigirStatus(vaga, StatusVaga.EM_AVALIACAO);
+    candidaturas.exigirProntidao(vaga.getVagaId(), vaga.getIdVaga());
+    vaga.alterarStatus(StatusVaga.RESULTADO_PUBLICADO);
+    resultados.registrar(vaga.getVagaId());
+    return new VagaOutputDto(vaga);
+  }
+
+  @Transactional
+  public VagaOutputDto concluir(UUID id) {
+    Vaga vaga = bloquear(id);
+    exigirStatus(vaga, StatusVaga.RESULTADO_PUBLICADO);
+    vaga.alterarStatus(StatusVaga.CONCLUIDA);
+    return new VagaOutputDto(vaga);
+  }
+
+  private void exigirStatus(Vaga vaga, StatusVaga esperado) {
+    if (vaga.getStatus() != esperado) throw new ResponseStatusException(HttpStatus.CONFLICT, "Transicao de vaga invalida");
   }
 
   private Vaga buscar(Long id) {
