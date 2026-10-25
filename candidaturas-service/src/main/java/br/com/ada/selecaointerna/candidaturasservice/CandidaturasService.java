@@ -20,6 +20,7 @@ public class CandidaturasService {
   private final ObjectMapper mapper;
   private final OutboxRepository outboxRepository;
   private final AvaliacaoRepository avaliacaoRepository;
+  private final ProcessoVagaService processos;
 
   @Transactional
   public CandidaturaOutputDto realizarCandidatura(CandidaturaInputDto input) {
@@ -27,6 +28,7 @@ public class CandidaturasService {
       throw new ResponseStatusException(HttpStatus.CONFLICT, "Candidatura ja registrada para empregado e vaga");
     }
     DadosCandidaturaClient.Dados dados = dadosClient.obter(input);
+    processos.validarInscricao(dados.criterios().vagaId(), input.idVaga());
     Candidatura candidatura = new Candidatura(input);
     CandidaturaRealizada evento = new CandidaturaRealizada(UUID.randomUUID(), candidatura.getRealizadaEm(),
         candidatura.getCandidaturaId(), dados.criterios().vagaId(), dados.perfil().empregadoId(), dados.perfil(), dados.criterios());

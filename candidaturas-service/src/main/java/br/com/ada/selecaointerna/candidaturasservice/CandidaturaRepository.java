@@ -10,6 +10,7 @@ import java.util.Optional;
 
 public interface CandidaturaRepository extends JpaRepository<Candidatura, UUID> {
   boolean existsByMatriculaEmpregadoAndIdVaga(Long matriculaEmpregado, Long idVaga);
+  long countByIdVaga(Long idVaga);
 
   @Lock(LockModeType.PESSIMISTIC_WRITE)
   @Query("select c from Candidatura c where c.candidaturaId = :id")
