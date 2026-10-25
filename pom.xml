@@ -16,6 +16,7 @@
     <java.version>21</java.version>
     <pact.version>4.6.17</pact.version>
     <maven.compiler.release>${java.version}</maven.compiler.release>
+    <test.excludedGroups>docker</test.excludedGroups>
   </properties>
   <modules>
     <module>empregados-service</module>
@@ -34,9 +35,9 @@
       </plugins>
     </pluginManagement>
   </build>
-  <!-- Perfis iniciais: configuracao de ambientes ainda pendente. -->
+  <!-- A inclui testes docker quando existentes; B/padrao executam a suite JVM. -->
   <profiles>
-    <profile><id>A</id><properties><execution.environment>docker</execution.environment></properties></profile>
+    <profile><id>A</id><properties><execution.environment>docker</execution.environment><test.excludedGroups/></properties></profile>
     <profile><id>B</id><properties><execution.environment>jvm</execution.environment></properties></profile>
     <profile><id>C</id><properties><execution.environment>conceitual</execution.environment></properties></profile>
   </profiles>

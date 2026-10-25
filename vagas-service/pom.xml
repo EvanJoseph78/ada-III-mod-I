@@ -75,6 +75,7 @@
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-surefire-plugin</artifactId>
         <configuration>
+          <excludedGroups>${test.excludedGroups}</excludedGroups>
           <useSystemClassLoader>false</useSystemClassLoader>
           <systemPropertyVariables>
             <pact.folder>${project.basedir}/../shared-contracts/pacts</pact.folder>
