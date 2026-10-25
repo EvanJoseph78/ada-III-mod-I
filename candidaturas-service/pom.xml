@@ -94,6 +94,7 @@
         <configuration>
           <systemPropertyVariables>
             <pact.rootDir>${project.build.directory}/pacts</pact.rootDir>
+            <pact.versionado>${project.basedir}/../shared-contracts/pacts/candidaturas-service-vagas-service.json</pact.versionado>
             <pact.writer.overwrite>true</pact.writer.overwrite>
             <pact_do_not_track>true</pact_do_not_track>
           </systemPropertyVariables>

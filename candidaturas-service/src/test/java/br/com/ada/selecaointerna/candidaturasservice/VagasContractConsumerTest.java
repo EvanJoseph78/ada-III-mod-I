@@ -9,18 +9,25 @@ import au.com.dius.pact.core.model.PactSpecVersion;
 import au.com.dius.pact.core.model.RequestResponsePact;
 import au.com.dius.pact.core.model.annotations.Pact;
 import br.com.ada.selecaointerna.contracts.StatusVaga;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.sun.net.httpserver.HttpServer;
 import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Map;
 import java.util.UUID;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.api.extension.AfterAllCallback;
+import org.junit.jupiter.api.extension.ExtensionContext;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.server.ResponseStatusException;
 import static org.assertj.core.api.Assertions.*;
 
-@ExtendWith(PactConsumerTestExt.class)
+// Callbacks terminam em ordem inversa: comparar somente depois de o Pact gravar o JSON.
+@ExtendWith({VagasContractConsumerTest.ContratoVersionado.class, PactConsumerTestExt.class})
 @PactTestFor(providerName = "vagas-service", pactVersion = PactSpecVersion.V3)
 class VagasContractConsumerTest {
   static final String VAGA = "d71c12f0-2fd9-4b70-b19e-89d539be96b0";
@@ -120,5 +127,25 @@ class VagasContractConsumerTest {
   private DadosCandidaturaClient cliente(MockServer server) {
     return new DadosCandidaturaClient(RestClient.builder(),
         "http://127.0.0.1:" + empregados.getAddress().getPort(), server.getUrl(), 2000);
+  }
+
+  public static class ContratoVersionado implements AfterAllCallback {
+    @Override
+    public void afterAll(ExtensionContext context) throws Exception {
+      // Escape explícito apenas para regeneração/revisão de uma mudança intencional do contrato.
+      if (Boolean.getBoolean("pact.atualizar")) return;
+      Path gerado = Path.of(System.getProperty("pact.rootDir"), "candidaturas-service-vagas-service.json");
+      Path versionado = Path.of(System.getProperty("pact.versionado"));
+      assertThat(Files.isRegularFile(gerado)).as("Pact gerado nesta execução").isTrue();
+      assertThat(Files.isRegularFile(versionado)).as("Pact versionado obrigatório").isTrue();
+      var mapper = new ObjectMapper();
+      ObjectNode esperado = (ObjectNode) mapper.readTree(gerado.toFile());
+      ObjectNode salvo = (ObjectNode) mapper.readTree(versionado.toFile());
+      // Metadados da ferramenta não alteram a expectativa de integração.
+      esperado.remove("metadata");
+      salvo.remove("metadata");
+      assertThat(salvo).as("Pact versionado diverge do gerado; revisar e copiar target/pacts antes do commit")
+          .isEqualTo(esperado);
+    }
   }
 }

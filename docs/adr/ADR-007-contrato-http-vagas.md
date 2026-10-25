@@ -13,6 +13,7 @@ O CORE pede um contrato executável entre dois serviços. A ADR-002 planejava co
 - Consumidor: `candidaturas-service`, exercitando `DadosCandidaturaClient` real contra o servidor mock do Pact. Empregados é um stub separado e não faz parte deste contrato.
 - Provedor: `vagas-service`, verificando o arquivo versionado contra a aplicação Spring Boot real, com HTTP em porta aleatória, controller, serviço, JPA e migrações H2. Não substituir o controller/serviço do provedor por mocks.
 - Gerar o JSON em `candidaturas-service/target/pacts`; revisar e versionar em `shared-contracts/pacts`. A verificação do provedor usa a cópia versionada, independente da ordem dos módulos Maven.
+- Após gerar, comparar automaticamente com o JSON versionado, ignorando somente metadados da ferramenta. A regeneração intencional exige propriedade explícita, revisão/cópia e build normal; não permitir que uma execução padrão aceite silenciosamente contrato desatualizado.
 - Cobrir resolução por ID, critérios de vaga aberta/em avaliação, referência inexistente e critérios inexistentes. Os estados do provedor preparam dados fictícios isolados; não dependem de PostgreSQL, Kafka ou Redis externos.
 - Pact JVM 4.6.17, somente em escopo de teste, com versão centralizada. Pact Broker não é necessário; nenhum resultado é publicado externamente.
 
@@ -35,4 +36,4 @@ O contrato verifica as expectativas de Candidaturas, não toda a API de Vagas, n
 
 ## Evidências
 
-Implementação e comandos em [contrato HTTP](../evidencias/contrato-http-vagas.md). Geração (quatro testes de consumidor) e verificação (sete interações do provedor) aprovadas em 24/10/2026, sem Docker.
+Implementação e comandos em [contrato HTTP](../evidencias/contrato-http-vagas.md). Geração (quatro testes de consumidor), verificação (sete interações do provedor), comparação de artefato e experimento de incompatibilidade aprovados em 24/10/2026. Build completo: 54 testes sem Docker.
