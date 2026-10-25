@@ -1,6 +1,6 @@
 # ADR-007 — Contrato executável HTTP entre Candidaturas e Vagas
 
-Status: aceita; implementação em etapas
+Status: aceita e implementada
 Data: 2026-10-24
 
 ## Contexto
@@ -35,4 +35,4 @@ O contrato verifica as expectativas de Candidaturas, não toda a API de Vagas, n
 
 ## Evidências
 
-Implementação e comandos em [contrato HTTP](../evidencias/contrato-http-vagas.md). Esta ADR será marcada implementada após geração e verificação aprovadas.
+Implementação e comandos em [contrato HTTP](../evidencias/contrato-http-vagas.md). Geração (quatro testes de consumidor) e verificação (sete interações do provedor) aprovadas em 24/10/2026, sem Docker.

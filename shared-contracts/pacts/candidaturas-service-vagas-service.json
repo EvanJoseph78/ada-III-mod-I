@@ -4,7 +4,27 @@
   },
   "interactions": [
     {
+      "description": "criterios de vaga inexistente",
+      "providerStates": [
+        {
+          "name": "vaga UUID inexistente"
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "path": "/api/v1/vagas/d71c12f0-2fd9-4b70-b19e-89d539be96b0/criterios"
+      },
+      "response": {
+        "status": 404
+      }
+    },
+    {
       "description": "consultar criterios: ABERTA",
+      "providerStates": [
+        {
+          "name": "vaga aberta com requisitos"
+        }
+      ],
       "request": {
         "method": "GET",
         "path": "/api/v1/vagas/d71c12f0-2fd9-4b70-b19e-89d539be96b0/criterios"
@@ -84,7 +104,54 @@
       }
     },
     {
+      "description": "resolver referencia antes de remocao",
+      "providerStates": [
+        {
+          "name": "vaga aberta com requisitos"
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "path": "/api/v1/vagas/900001"
+      },
+      "response": {
+        "body": {
+          "vagaId": "d71c12f0-2fd9-4b70-b19e-89d539be96b0"
+        },
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "status": 200
+      }
+    },
+    {
+      "description": "resolver vaga numerica: ABERTA",
+      "providerStates": [
+        {
+          "name": "vaga aberta com requisitos"
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "path": "/api/v1/vagas/900001"
+      },
+      "response": {
+        "body": {
+          "vagaId": "d71c12f0-2fd9-4b70-b19e-89d539be96b0"
+        },
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "status": 200
+      }
+    },
+    {
       "description": "consultar criterios: EM_AVALIACAO",
+      "providerStates": [
+        {
+          "name": "vaga em avaliacao com requisitos"
+        }
+      ],
       "request": {
         "method": "GET",
         "path": "/api/v1/vagas/d71c12f0-2fd9-4b70-b19e-89d539be96b0/criterios"
@@ -159,63 +226,6 @@
               ]
             }
           }
-        },
-        "status": 200
-      }
-    },
-    {
-      "description": "criterios de vaga inexistente",
-      "providerStates": [
-        {
-          "name": "vaga UUID inexistente"
-        }
-      ],
-      "request": {
-        "method": "GET",
-        "path": "/api/v1/vagas/d71c12f0-2fd9-4b70-b19e-89d539be96b0/criterios"
-      },
-      "response": {
-        "status": 404
-      }
-    },
-    {
-      "description": "resolver referencia antes de remocao",
-      "providerStates": [
-        {
-          "name": "vaga aberta com requisitos"
-        }
-      ],
-      "request": {
-        "method": "GET",
-        "path": "/api/v1/vagas/900001"
-      },
-      "response": {
-        "body": {
-          "vagaId": "d71c12f0-2fd9-4b70-b19e-89d539be96b0"
-        },
-        "headers": {
-          "Content-Type": "application/json"
-        },
-        "status": 200
-      }
-    },
-    {
-      "description": "resolver vaga numerica: ABERTA",
-      "providerStates": [
-        {
-          "name": "vaga aberta com requisitos"
-        }
-      ],
-      "request": {
-        "method": "GET",
-        "path": "/api/v1/vagas/900001"
-      },
-      "response": {
-        "body": {
-          "vagaId": "d71c12f0-2fd9-4b70-b19e-89d539be96b0"
-        },
-        "headers": {
-          "Content-Type": "application/json"
         },
         "status": 200
       }

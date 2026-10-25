@@ -62,6 +62,7 @@ class VagasContractConsumerTest {
         .uponReceiving("resolver vaga numerica: " + status).path("/api/v1/vagas/900001").method("GET")
         .willRespondWith().status(200).headers(Map.of("Content-Type", "application/json"))
         .body(new PactDslJsonBody().stringValue("vagaId", VAGA))
+        .given(estado)
         .uponReceiving("consultar criterios: " + status).path("/api/v1/vagas/" + VAGA + "/criterios").method("GET")
         .willRespondWith().status(200).headers(Map.of("Content-Type", "application/json"))
         .body(new PactDslJsonBody().stringValue("vagaId", VAGA).stringType("titulo", "Java")
