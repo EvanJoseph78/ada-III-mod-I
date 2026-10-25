@@ -31,7 +31,8 @@ import static org.mockito.ArgumentMatchers.*;
     "spring.datasource.url=jdbc:h2:mem:fluxo-kafka;MODE=PostgreSQL;DB_CLOSE_DELAY=-1"})
 @ActiveProfiles("test")
 @EmbeddedKafka(kraft = true, partitions = 3,
-    topics = {Topicos.CANDIDATURAS_REALIZADAS, Topicos.CANDIDATURAS_REALIZADAS + ".DLT"},
+    topics = {Topicos.CANDIDATURAS_REALIZADAS, Topicos.CANDIDATURAS_REALIZADAS + ".DLT",
+        Topicos.VAGAS_RESULTADOS, Topicos.VAGAS_RESULTADOS + ".DLT"},
     bootstrapServersProperty = "spring.kafka.bootstrap-servers")
 @DirtiesContext
 class FluxoKafkaTest {
@@ -48,10 +49,14 @@ class FluxoKafkaTest {
   @MockitoBean DadosCandidaturaClient dadosClient;
   @MockitoSpyBean AvaliadorCurricular avaliador;
   @MockitoSpyBean CandidaturaKafkaListener listener;
+  @Autowired ProcessoVagaService processos;
+  @MockitoSpyBean ResultadoDefinitivoService resultados;
+  @MockitoSpyBean ResultadoKafkaListener resultadoListener;
 
   @BeforeEach
   void preparar() {
     ContainerTestUtils.waitForAssignment(registry.getListenerContainer("avaliacao-curricular"), 3);
+    ContainerTestUtils.waitForAssignment(registry.getListenerContainer("resultado-publicado"), 3);
     avaliacoes.deleteAll(); outbox.deleteAll(); repository.deleteAll();
     when(dadosClient.obter(any())).thenReturn(new DadosCandidaturaClient.Dados(
         new PerfilProfissionalDto(UUID.randomUUID(), "Ana", List.of(new ItemPerfilDto(TipoItem.CURSO, "Java", 40, null))),
@@ -121,10 +126,60 @@ class FluxoKafkaTest {
   }
 
   private Consumer<String, String> consumidorDlt() {
+    return consumidorDlt(DLT);
+  }
+
+  @Test
+  void resultadoConsomeReentregaPreservaSnapshotEDivergenciaVaiParaDlt() throws Exception {
+    var evento = resultadoPronto();
+    String payload = mapper.writeValueAsString(evento);
+    kafka.send(Topicos.VAGAS_RESULTADOS, evento.vagaId().toString(), payload).get(10, TimeUnit.SECONDS);
+    await().atMost(Duration.ofSeconds(15)).ignoreException(org.springframework.web.server.ResponseStatusException.class)
+        .untilAsserted(() -> assertThat(resultados.consultar(evento.vagaId()).publicacao()).isEqualTo(evento));
+    var original = resultados.consultar(evento.vagaId());
+    kafka.send(Topicos.VAGAS_RESULTADOS, evento.vagaId().toString(), payload).get(10, TimeUnit.SECONDS);
+    await().atMost(Duration.ofSeconds(15)).untilAsserted(() -> verify(resultadoListener, times(2)).receber(payload));
+    assertThat(resultados.consultar(evento.vagaId())).isEqualTo(original);
+    try (var consumer = consumidorDlt(Topicos.VAGAS_RESULTADOS + ".DLT")) {
+      String divergente = mapper.writeValueAsString(new ResultadoPublicado(UUID.randomUUID(), evento.ocorridoEm(), evento.vagaId()));
+      kafka.send(Topicos.VAGAS_RESULTADOS, evento.vagaId().toString(), divergente).get(10, TimeUnit.SECONDS);
+      esperarDlt(consumer, divergente);
+      assertThat(resultados.consultar(evento.vagaId())).isEqualTo(original);
+    }
+  }
+
+  @Test
+  void resultadoComFalhaTransitoriaRetentaEJsonInvalidoVaiParaDlt() throws Exception {
+    var evento = resultadoPronto();
+    doThrow(new TransientDataAccessResourceException("Falha transitoria simulada")).doCallRealMethod()
+        .when(resultados).processar(evento);
+    kafka.send(Topicos.VAGAS_RESULTADOS, evento.vagaId().toString(), mapper.writeValueAsString(evento)).get(10, TimeUnit.SECONDS);
+    await().atMost(Duration.ofSeconds(15)).ignoreException(org.springframework.web.server.ResponseStatusException.class)
+        .untilAsserted(() -> assertThat(resultados.consultar(evento.vagaId()).publicacao()).isEqualTo(evento));
+    verify(resultados, times(2)).processar(evento);
+    try (var consumer = consumidorDlt(Topicos.VAGAS_RESULTADOS + ".DLT")) {
+      String invalido = "resultado-invalido-" + UUID.randomUUID();
+      kafka.send(Topicos.VAGAS_RESULTADOS, UUID.randomUUID().toString(), invalido).get(10, TimeUnit.SECONDS);
+      esperarDlt(consumer, invalido);
+    }
+  }
+
+  private ResultadoPublicado resultadoPronto() throws Exception {
+    // IDs distintos evitam reutilizar a barreira persistente entre testes.
+    long idVaga = Math.abs(UUID.randomUUID().getMostSignificantBits() / 2) + 100;
+    var c = candidaturas.realizarCandidatura(new CandidaturaInputDto(123L, idVaga));
+    dispatcher.publicarPendentes();
+    await().atMost(Duration.ofSeconds(15)).untilAsserted(() -> assertThat(candidaturas.obterCandidatura(c.candidaturaId()).status()).isEqualTo("AVALIADA"));
+    var candidatura = mapper.readValue(repository.findById(c.candidaturaId()).orElseThrow().getEventoCandidatura(), CandidaturaRealizada.class);
+    processos.encerrar(candidatura.vagaId(), idVaga);
+    return new ResultadoPublicado(UUID.randomUUID(), java.time.Instant.now(), candidatura.vagaId());
+  }
+
+  private Consumer<String, String> consumidorDlt(String topico) {
     var props = KafkaTestUtils.consumerProps("verificacao-dlt-" + UUID.randomUUID(), "false", broker);
     Consumer<String, String> consumer = new DefaultKafkaConsumerFactory<>(props,
         new StringDeserializer(), new StringDeserializer()).createConsumer();
-    broker.consumeFromAnEmbeddedTopic(consumer, DLT);
+    broker.consumeFromAnEmbeddedTopic(consumer, topico);
     return consumer;
   }
 

@@ -25,3 +25,9 @@ POST /api/v1/vagas/{vagaId}/resultado exige EM_AVALIACAO e prontidão remota, gr
 ## 5. Resultado definitivo em Candidaturas
 
 Consumidor de vagas.resultados e GET /api/v1/candidaturas/resultados/{vagaId} implementados. O consumidor bloqueia o processo fechado, confere prontidão e grava snapshot do ranking diretamente do banco. Reentrega idêntica preserva evento/data/resultado; divergência é rejeitada. Quatro testes aprovados: concorrência/replay, avaliação pendente com retomada, rollback/resultado vazio e eventos inválidos. A leitura definitiva não usa Redis nem altera o contrato do ranking parcial em cache. Integração com broker e fluxo entre serviços será verificada a seguir.
+
+## 6. Kafka, falhas HTTP e build completo
+
+A suíte completa passou com 76 testes, zero falhas/erros/ignorados, em mvn -o -PB clean verify. FluxoKafkaTest tem seis cenários: quatro anteriores e dois novos cobrindo consumo/reentrega de ResultadoPublicado, preservação do snapshot, divergência/JSON inválido para vagas.resultados.DLT e retry de falha transitória. A espera pelo consumo tolera 404 até o resultado existir, dentro do prazo do teste.
+
+Três testes HTTP do cliente de coordenação verificam vínculo dos IDs, prontidão, contagens divergentes, campos ausentes, JSON inválido, 404/500 e timeout. Respostas incompletas nunca liberam publicação. O contrato Pact existente continua passando; os endpoints novos ainda não têm Pact próprio.

@@ -30,7 +30,7 @@ public class ProcessoCandidaturasClient {
   public void exigirProntidao(UUID vagaId, Long idVaga) {
     var resposta = executar(vagaId, idVaga, () -> client.get()
         .uri("/api/v1/candidaturas/processos/{id}/prontidao", vagaId).retrieve().body(Prontidao.class));
-    if (!resposta.apto() || resposta.inscricoes() != resposta.avaliacoes()) {
+    if (!resposta.apto() || !resposta.inscricoes().equals(resposta.avaliacoes())) {
       throw new ResponseStatusException(HttpStatus.CONFLICT, "Ainda existem inscricoes sem avaliacao");
     }
   }
@@ -39,6 +39,7 @@ public class ProcessoCandidaturasClient {
     try {
       var resposta = consulta.get();
       if (resposta == null || !vagaId.equals(resposta.vagaId()) || !idVaga.equals(resposta.idVaga())
+          || resposta.inscricoes() == null || resposta.avaliacoes() == null || resposta.apto() == null
           || resposta.inscricoes() < 0 || resposta.avaliacoes() < 0) {
         throw new ResponseStatusException(HttpStatus.BAD_GATEWAY, "Prontidao inconsistente");
       }
@@ -55,5 +56,5 @@ public class ProcessoCandidaturasClient {
     }
   }
 
-  private record Prontidao(UUID vagaId, Long idVaga, long inscricoes, long avaliacoes, boolean apto) {}
+  private record Prontidao(UUID vagaId, Long idVaga, Long inscricoes, Long avaliacoes, Boolean apto) {}
 }
