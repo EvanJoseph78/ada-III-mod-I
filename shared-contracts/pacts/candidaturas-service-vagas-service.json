@@ -1,0 +1,271 @@
+{
+  "consumer": {
+    "name": "candidaturas-service"
+  },
+  "interactions": [
+    {
+      "description": "consultar criterios: ABERTA",
+      "request": {
+        "method": "GET",
+        "path": "/api/v1/vagas/d71c12f0-2fd9-4b70-b19e-89d539be96b0/criterios"
+      },
+      "response": {
+        "body": {
+          "requisitos": [
+            {
+              "mesesMinimos": 6,
+              "obrigatorio": true,
+              "palavraChave": "Java",
+              "pontos": 10,
+              "tipo": "EXPERIENCIA_INTERNA"
+            }
+          ],
+          "status": "ABERTA",
+          "titulo": "Java",
+          "vagaId": "d71c12f0-2fd9-4b70-b19e-89d539be96b0"
+        },
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "matchingRules": {
+          "body": {
+            "$.requisitos": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type",
+                  "min": 1
+                }
+              ]
+            },
+            "$.requisitos[*].mesesMinimos": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "integer"
+                }
+              ]
+            },
+            "$.requisitos[*].obrigatorio": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.requisitos[*].palavraChave": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.requisitos[*].pontos": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "integer"
+                }
+              ]
+            },
+            "$.titulo": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            }
+          }
+        },
+        "status": 200
+      }
+    },
+    {
+      "description": "consultar criterios: EM_AVALIACAO",
+      "request": {
+        "method": "GET",
+        "path": "/api/v1/vagas/d71c12f0-2fd9-4b70-b19e-89d539be96b0/criterios"
+      },
+      "response": {
+        "body": {
+          "requisitos": [
+            {
+              "mesesMinimos": 6,
+              "obrigatorio": true,
+              "palavraChave": "Java",
+              "pontos": 10,
+              "tipo": "EXPERIENCIA_INTERNA"
+            }
+          ],
+          "status": "EM_AVALIACAO",
+          "titulo": "Java",
+          "vagaId": "d71c12f0-2fd9-4b70-b19e-89d539be96b0"
+        },
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "matchingRules": {
+          "body": {
+            "$.requisitos": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type",
+                  "min": 1
+                }
+              ]
+            },
+            "$.requisitos[*].mesesMinimos": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "integer"
+                }
+              ]
+            },
+            "$.requisitos[*].obrigatorio": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.requisitos[*].palavraChave": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.requisitos[*].pontos": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "integer"
+                }
+              ]
+            },
+            "$.titulo": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            }
+          }
+        },
+        "status": 200
+      }
+    },
+    {
+      "description": "criterios de vaga inexistente",
+      "providerStates": [
+        {
+          "name": "vaga UUID inexistente"
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "path": "/api/v1/vagas/d71c12f0-2fd9-4b70-b19e-89d539be96b0/criterios"
+      },
+      "response": {
+        "status": 404
+      }
+    },
+    {
+      "description": "resolver referencia antes de remocao",
+      "providerStates": [
+        {
+          "name": "vaga aberta com requisitos"
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "path": "/api/v1/vagas/900001"
+      },
+      "response": {
+        "body": {
+          "vagaId": "d71c12f0-2fd9-4b70-b19e-89d539be96b0"
+        },
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "status": 200
+      }
+    },
+    {
+      "description": "resolver vaga numerica: ABERTA",
+      "providerStates": [
+        {
+          "name": "vaga aberta com requisitos"
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "path": "/api/v1/vagas/900001"
+      },
+      "response": {
+        "body": {
+          "vagaId": "d71c12f0-2fd9-4b70-b19e-89d539be96b0"
+        },
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "status": 200
+      }
+    },
+    {
+      "description": "resolver vaga numerica: EM_AVALIACAO",
+      "providerStates": [
+        {
+          "name": "vaga em avaliacao com requisitos"
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "path": "/api/v1/vagas/900001"
+      },
+      "response": {
+        "body": {
+          "vagaId": "d71c12f0-2fd9-4b70-b19e-89d539be96b0"
+        },
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "status": 200
+      }
+    },
+    {
+      "description": "resolver vaga inexistente",
+      "providerStates": [
+        {
+          "name": "vaga numerica inexistente"
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "path": "/api/v1/vagas/900099"
+      },
+      "response": {
+        "status": 404
+      }
+    }
+  ],
+  "metadata": {
+    "pact-jvm": {
+      "version": "4.6.17"
+    },
+    "pactSpecification": {
+      "version": "3.0.0"
+    }
+  },
+  "provider": {
+    "name": "vagas-service"
+  }
+}
