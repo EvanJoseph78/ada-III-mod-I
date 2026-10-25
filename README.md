@@ -13,13 +13,13 @@ Perfis profissionais, vagas, inscrições, avaliação curricular, pontuação e
 - candidaturas-service: inscrições, avaliação e ranking.
 - shared-contracts: contratos de integração, sem entidades de persistência compartilhadas.
 
-Cada serviço usa sua própria base PostgreSQL e seu próprio usuário. Kafka transporta candidaturas para avaliação; eventos de avaliação concluída e publicação do resultado da vaga continuam planejados.
+Cada serviço usa sua própria base PostgreSQL e seu próprio usuário. Kafka transporta candidaturas para avaliação e resultados publicados de Vagas para Candidaturas. `AvaliacaoConcluida` permanece apenas definido; o ranking atual não depende desse evento.
 
 ## Ambiente e execução
 
 Perfil alvo: **A — Docker em máquina pessoal**.
 
-Estado atual: aplicações Spring Boot 3.5.9 com Java 21, persistência JPA e migrações Flyway nos três bancos. A inscrição consulta perfil/critérios por HTTP, grava snapshots e outbox e é avaliada por consumidor Kafka idempotente, com retry/DLT. Ranking parcial e cache-aside Redis estão implementados e validados. O contrato executável Pact HTTP Candidaturas → Vagas também está implementado. O build completo passou com 54 testes. A suíte usa H2, Caffeine, Pact e Kafka KRaft embarcado, sem Docker, e há evidências com infraestrutura local. Publicação do resultado da vaga continua pendente. Os profiles Maven A/B/C continuam como marcadores e não configuram os ambientes.
+Estado atual: inscrição com HTTP/snapshots/outbox, avaliação Kafka idempotente, ranking com cache-aside Redis, Pact HTTP entre serviços, fechamento de inscrições, publicação durável e resultado definitivo implementados. Build aprovado com **76 testes** no perfil B, sem Docker. Execução dos três JARs com infraestrutura local comprovou o fluxo até CONCLUIDA, retomada de publicação e persistência após reinício. Ver [evidências](docs/evidencias/publicacao-resultado.md) e [recorte entregue](docs/escopo.md#recorte-entregue).
 
 ### Build e testes sem Docker
 
@@ -32,6 +32,8 @@ mvn clean verify
 O reactor compila primeiro `shared-contracts`, executa os testes e gera os JARs dos serviços. Os testes usam o profile Spring `test`, ativado pelas classes de teste, com H2 em modo PostgreSQL e as mesmas migrações Flyway da aplicação. O profile Spring `test` não é o profile Maven B. O resultado e seus limites estão em [persistencia.md](docs/evidencias/persistencia.md).
 
 `FluxoKafkaTest` inicia um broker KRaft na JVM, em portas livres, para verificar publicação/consumo, reentrega, retry e DLT. Não precisa do Kafka local nem de Docker. O teste usa cliente/broker 3.9.1, gerenciados pelas dependências; a infraestrutura do Compose declara Kafka 4.1.1. Evidências e limites em [fluxo-assincrono.md](docs/evidencias/fluxo-assincrono.md).
+
+Padrão e `mvn -PB clean verify` excluem a etiqueta JUnit `docker`; `-PA` remove a exclusão para testes dessa etiqueta quando existirem. Testcontainers ainda não foi implementado, portanto A não acrescenta testes de contêineres hoje. Os perfis Maven não sobem o Compose nem substituem variáveis das aplicações; C identifica a alternativa conceitual. Para modo offline, usar `mvn -o -PB clean verify` após baixar dependências. A execução real usa serviços JVM e dependências locais, com Compose como infraestrutura de referência (ADR-001).
 
 ### Contrato executável entre serviços
 
@@ -73,7 +75,36 @@ $env:EMPREGADOS_DB_PASSWORD = 'senha-configurada-no-banco'
 
 As variáveis aceitas seguem o padrão `EMPREGADOS_DB_URL`, `EMPREGADOS_DB_USER` e `EMPREGADOS_DB_PASSWORD`; para os outros serviços, substituir o prefixo por `VAGAS` ou `CANDIDATURAS`. A URL padrão é `jdbc:postgresql://localhost:5432/<banco>`. `SERVER_PORT` altera a porta HTTP do serviço naquele terminal. Alterar a senha no `.env` não modifica usuários de um volume já inicializado; usar as credenciais existentes ou alterá-las explicitamente no banco.
 
-O roteiro de cadastro, consulta e verificação após reiniciar está em [persistencia.md](docs/evidencias/persistencia.md). A integração foi validada com sete testes H2 e com PostgreSQL 17.11, incluindo leitura dos dados após reiniciar os três serviços. A execução a partir de um clone limpo e o fluxo completo entre serviços continuam pendentes.
+O roteiro inicial está em [persistencia.md](docs/evidencias/persistencia.md). A validação mais recente do fluxo completo, com publicação/reinícios, está em [publicacao-resultado.md](docs/evidencias/publicacao-resultado.md).
+
+### Fechamento e publicação do resultado
+
+Depois das inscrições, usar UUID da vaga nas rotas:
+
+```text
+POST /api/v1/vagas/{vagaId}/encerramento
+POST /api/v1/vagas/{vagaId}/resultado
+GET  /api/v1/candidaturas/resultados/{vagaId}
+POST /api/v1/vagas/{vagaId}/conclusao
+```
+
+O fechamento responde 200 e avança ABERTA → EM_AVALIACAO, criando antes uma barreira em Candidaturas. É repetível nesse estado, inclusive para recuperar falha de resposta/commit entre serviços. Novas inscrições retornam 409 após a barreira, mesmo que o HTTP tenha começado antes. Configurar em Vagas `CANDIDATURAS_SERVICE_URL` (padrão `http://localhost:8083`) e `INTEGRACOES_TIMEOUT_MS` (2000).
+
+A publicação exige todas as inscrições avaliadas e grava RESULTADO_PUBLICADO/outbox atomicamente, respondendo **202**. A entrega Kafka é posterior. Consultar o resultado definitivo até 200; 404 significa que ainda não está disponível ou não existe resultado local. Repetir publicação, publicar antes de fechar ou com avaliações pendentes retorna 409. Zero inscritos permite resultado vazio. Inscrições históricas não avaliadas também bloqueiam publicação e exigem tratamento explícito.
+
+Vagas usa `KAFKA_BOOTSTRAP_SERVERS` e `OUTBOX_INTERVALO_MS` com os mesmos padrões de Candidaturas. `MENSAGERIA_ENABLED=false` em Vagas pausa seu dispatcher/criação de tópico, preservando outbox; em Candidaturas pausa dispatcher e listeners. O consumidor de `vagas.resultados` usa `RESULTADO_CONSUMER_GROUP` (padrão `resultados-publicados`), com retry/DLT e gravação idempotente. Divergências não sobrescrevem o resultado. DLT: `vagas.resultados.DLT`, replay manual com evento original após corrigir a causa.
+
+O resultado definitivo contém publicação original, ranking persistido e contagens; não depende de Redis. O ranking parcial/cache fica separado. CONCLUIDA é conclusão administrativa após RESULTADO_PUBLICADO, não ACK do consumidor. Exclusão fora de ABERTA retorna 409. Não há reabertura/segunda publicação. [ADR-008](docs/adr/ADR-008-publicacao-resultado.md).
+
+### Demonstração reproduzível no Windows
+
+Com infraestrutura pronta, portas 18081/18082/18083 livres e JARs construídos:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File scripts/validar-fluxo.ps1
+```
+
+O helper inicia aplicações próprias, cria dados fictícios, testa fechamento/avaliação/ranking/publicação, reinicia serviços e confere persistência/conclusão. Carrega explicitamente senhas do `.env` se ausentes no ambiente, sem imprimi-las. A política de scripts é liberada apenas nesse processo. Logs/IDs ficam em `target/validacao-fluxo`. Encerra suas aplicações e mantém infraestrutura/dados. Não executar o ensaio de pausa junto com outras instâncias processando os mesmos bancos/grupos. Na banca, iniciar os três serviços normais e mantê-los disponíveis; usar o helper para ensaiar/gravar previamente.
 
 ### Cache do ranking
 
@@ -131,4 +162,4 @@ Esse comando valida apenas a estrutura. Para compilar, empacotar e executar os t
 - [Uso crítico de IA](docs/uso-de-ia.md)
 - [Enunciado](docs/referencia/projeto-final-brief-alunos.md)
 
-Integrantes, papéis e opcionais: pendentes de registro.
+Integrantes: André, Evandro e Rafael. Com três integrantes, opcionais não são obrigatórios. Papéis efetivamente exercidos e revisão humana final devem ser conferidos pelo grupo antes da entrega; não foram atribuídos automaticamente.

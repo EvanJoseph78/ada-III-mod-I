@@ -12,13 +12,14 @@ Usar TEMPLATE.md para cada decisão. Registrar alternativas e trade-offs reais.
 - [ADR-005 - Snapshots, outbox e avaliação idempotente](ADR-005-fluxo-assincrono.md) — aceita e implementada; testes Kafka e verificação com infraestrutura local aprovados.
 - [ADR-006 - Ranking e cache](ADR-006-cache-ranking.md) — aceita e implementada; testes de TTL/fallback/concorrência e validação Redis aprovados.
 - [ADR-007 - Contrato HTTP de Vagas](ADR-007-contrato-http-vagas.md) — aceita e implementada; cliente real do consumidor e API real do provedor, sem Docker.
+- [ADR-008 - Fechamento e publicação durável](ADR-008-publicacao-resultado.md) — aceita e implementada; barreira de admissão, outbox de Vagas e resultado definitivo idempotente validados.
 
 ## Decisões pendentes
 
 Decisões a elaborar:
 
 1. Evolução dos limites de domínio da ADR-004 conforme a integração entre serviços.
-2. Publicação de resultado; contrato executável HTTP implementado na ADR-007, entrega e idempotência da candidatura na ADR-005.
+2. Eventual retificação de resultado/reabertura, que não fazem parte da publicação única implementada na ADR-008.
 3. Evoluir cache/revisão caso a resposta passe a incluir publicação ou outros dados mutáveis (ADR-006).
 4. Implementação e validação da estratégia de testes da ADR-002.
 

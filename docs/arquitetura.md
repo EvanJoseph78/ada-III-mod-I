@@ -1,12 +1,12 @@
 # Arquitetura — estado atual e evolução
 
-Atualizada em 2026-10-24. Três serviços com bases e credenciais próprias; entidades JPA não são compartilhadas. Inscrição, avaliação, ranking parcial com cache-aside e contrato executável HTTP Candidaturas → Vagas estão implementados. Publicação do resultado da vaga continua pendente.
+Atualizada em 2026-10-25. Três serviços com bases e credenciais próprias; entidades JPA não são compartilhadas. Inscrição, avaliação, ranking/cache, Pact HTTP, fechamento, publicação durável e consulta definitiva estão implementados e validados.
 
 | Contexto | Responsabilidade | Dados próprios |
 | --- | --- | --- |
 | Empregados | Perfil e qualificações | Empregados e itens de formação/experiência |
-| Vagas | Oportunidades e critérios | Vagas, status e requisitos |
-| Candidaturas | Inscrição e avaliação | Candidaturas, snapshots, outbox e avaliações |
+| Vagas | Oportunidades, critérios e publicação | Vagas, status, requisitos e outbox de resultados |
+| Candidaturas | Inscrição, avaliação e classificação | Candidaturas, snapshots, outbox, avaliações, barreiras e resultados definitivos |
 
 ## Fluxo implementado
 
@@ -76,9 +76,39 @@ O perfil alvo A usa Kafka, PostgreSQL e Redis no Compose; os serviços executam 
 
 A suíte padrão usa H2, Caffeine e Kafka KRaft embarcado, sem Docker. Testes verificam consultas HTTP, snapshots, atomicidade da outbox, cálculo, reentrega, concorrência, retry/DLT e cache. O Pact exercita o cliente real de Candidaturas e verifica a API real de Vagas em porta aleatória com H2; a cópia versionada permite testar o provedor independentemente da ordem do reactor. Geração e verificação em [contrato HTTP](evidencias/contrato-http-vagas.md), decisão na [ADR-007](adr/ADR-007-contrato-http-vagas.md). Testes embarcados e validação com infraestrutura real são evidências distintas.
 
-## Entregas ainda pendentes
+## Fechamento e publicação definitiva
 
-- Publicação do resultado da vaga e evento `ResultadoPublicado`. O primeiro Pact já cobre a integração HTTP entre Vagas e Candidaturas; não comprova esse evento planejado.
+```mermaid
+sequenceDiagram
+    participant U as Cliente
+    participant V as Vagas
+    participant C as Candidaturas
+    participant K as Kafka
+    U->>V: POST encerramento
+    V->>C: Fechar admissões com barreira persistente
+    C-->>V: Barreira confirmada
+    V-->>U: EM_AVALIACAO
+    U->>V: POST resultado
+    V->>C: Verificar todas as inscrições avaliadas
+    C-->>V: Prontidão e contagens
+    V->>V: Commit: RESULTADO_PUBLICADO + outbox
+    V-->>U: 202
+    V->>K: ResultadoPublicado (chave vagaId)
+    K-->>V: ACK; marcar outbox enviada
+    K->>C: Evento ao grupo resultados-publicados
+    C->>C: Bloquear processo, deduplicar e persistir ranking definitivo
+    C-->>K: Confirmar após commit
+    U->>C: GET resultado definitivo
+    C-->>U: Evento/data originais, ranking e contagens
+```
+
+Uma linha de coordenação transacional em Candidaturas serializa brevemente admissões/fechamentos, após as consultas HTTP, impedindo inscrição tardia. O custo é contenção global nesse trecho, documentada na [ADR-008](adr/ADR-008-publicacao-resultado.md). Falha entre fechamento local e commit de Vagas exige repetir o comando; não há reabertura automática.
+
+Vagas exige estado EM_AVALIACAO e prontidão (incluindo avaliações inelegíveis). Status e intenção são atômicos apenas no banco de Vagas; o resultado em Candidaturas é eventualmente consistente. A entrega é at-least-once e idempotente; divergência vai para DLT. A consulta definitiva é um snapshot persistido do banco, independente do cache parcial. CONCLUIDA é administrativa, não confirmação remota. Execução real, falhas e limites em [publicação](evidencias/publicacao-resultado.md).
+
+## Evoluções e preparação da banca
+
+- Revisão humana do grupo, papéis e ensaio cronometrado. O Pact cobre consultas HTTP de Vagas; os novos endpoints/eventos têm testes de integração, sem um segundo Pact.
 - Evento `AvaliacaoConcluida`, se mantido no desenho final; ainda não é emitido. A consulta atual de ranking e sua invalidação leem a revisão no próprio banco e não dependem desse segundo evento.
 - Revisão da política de exclusão de vaga, operações de correção/replay e retenção de eventos.
-- Reprodução a partir de clone limpo e demonstração de todos os requisitos obrigatórios.
+- Reprodução a partir de clone limpo e revisão final documentadas nas evidências de entrega, conforme forem concluídas.

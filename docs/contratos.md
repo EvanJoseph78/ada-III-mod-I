@@ -6,7 +6,7 @@ Os DTOs e eventos estão em `shared-contracts`. Qualquer mudança passa pelo res
 
 Candidaturas consome Vagas por HTTP. `VagasContractConsumerTest` exercita `DadosCandidaturaClient` e gera o Pact das consultas por ID numérico e critérios por UUID. `VagasContractProviderTest` verifica o [JSON versionado](../shared-contracts/pacts/candidaturas-service-vagas-service.json) contra a aplicação Vagas real com H2. Ambos rodam em `mvn verify`, sem Docker; há comparação automática entre JSON gerado e versionado. [Como atualizar](../shared-contracts/pacts/README.md), [evidências](evidencias/contrato-http-vagas.md) e [ADR-007](adr/ADR-007-contrato-http-vagas.md).
 
-Este par atende ao requisito de um contrato executável entre dois serviços. O plano de mensagem `ResultadoPublicado` da ADR-002 foi substituído para essa primeira entrega; publicação do resultado e contrato de mensagem ainda não estão implementados.
+Este par atende ao requisito de um contrato executável entre dois serviços. O plano de mensagem da ADR-002 foi substituído para essa primeira entrega. A publicação de `ResultadoPublicado` está implementada com testes Kafka e execução local; ainda não há Pact de mensagem ou dos novos endpoints de coordenação.
 
 ## HTTP
 
@@ -14,7 +14,10 @@ Este par atende ao requisito de um contrato executável entre dois serviços. O 
 | --- | --- | --- |
 | empregados-service | `GET /api/v1/empregados/{empregadoId}/perfil` | Implementado: `PerfilProfissionalDto`; UUID do empregado (404 se não existir) |
 | vagas-service | `GET /api/v1/vagas/{vagaId}/criterios` | Implementado: `CriteriosVagaDto`; UUID da vaga (404 se não existir) |
-| vagas-service | `POST /api/v1/vagas/{vagaId}/resultado` | Planejado: publica o resultado e emite `ResultadoPublicado` (409 se a transição for inválida) |
+| vagas-service | `POST /api/v1/vagas/{vagaId}/encerramento` | 200, ABERTA → EM_AVALIACAO; repetível em EM_AVALIACAO |
+| vagas-service | `POST /api/v1/vagas/{vagaId}/resultado` | 202, intenção durável em outbox; exige fechamento e todas as avaliações; 409 para transição inválida/pendência |
+| vagas-service | `POST /api/v1/vagas/{vagaId}/conclusao` | 200, RESULTADO_PUBLICADO → CONCLUIDA; conclusão administrativa |
+| candidaturas-service | `GET /api/v1/candidaturas/resultados/{vagaId}` | Publicação original, ranking definitivo e contagens; 404 até existir |
 
 As consultas básicas existentes usam matrícula (`GET /api/v1/empregados/{matriculaEmpregado}`) e ID numérico da vaga (`GET /api/v1/vagas/{idVaga}`). Os cadastros retornam também os UUIDs usados nos contratos. Não houve alteração das classes de `shared-contracts`.
 
@@ -32,14 +35,18 @@ O ranking usa cache-aside com TTL e revisão por vaga. Uma avaliação confirmad
 
 ## Eventos Kafka
 
-`CandidaturaRealizada` é gravado em outbox com a inscrição, publicado por um dispatcher e consumido pelo grupo `avaliacao-curricular`. A avaliação usa apenas o snapshot, persiste uma única vez por candidatura/evento e fica disponível no GET da inscrição. `AvaliacaoConcluida` e `ResultadoPublicado` continuam planejados, sem produtores/consumidores implementados; consultar [acompanhamento](evidencias/fluxo-assincrono.md).
+`CandidaturaRealizada` é gravado em outbox com a inscrição, publicado por um dispatcher e consumido pelo grupo `avaliacao-curricular`. A avaliação usa o snapshot e persiste uma única vez por candidatura/evento. `ResultadoPublicado` é produzido por Vagas via outbox e consumido pelo grupo `resultados-publicados` de Candidaturas. `AvaliacaoConcluida` permanece somente definido, sem produtor/consumidor; o ranking/cache atuais não dependem dele.
 
 | Tópico | Evento | Produtor | Consumidor | Chave |
 | --- | --- | --- | --- | --- |
 | `candidaturas.realizadas` | `CandidaturaRealizada` | candidaturas-service | candidaturas-service (avaliação) | `candidaturaId` |
-| `avaliacoes.concluidas` | `AvaliacaoConcluida` | candidaturas-service | candidaturas-service (ranking e cache) | `candidaturaId` |
+| `avaliacoes.concluidas` (planejado) | `AvaliacaoConcluida` | não implementado | não implementado | `candidaturaId` |
 | `vagas.resultados` | `ResultadoPublicado` | vagas-service | candidaturas-service | `vagaId` |
 
 Garantia de entrega: at-least-once. Os consumidores precisam ser idempotentes.
+
+Vagas coordena `POST /api/v1/candidaturas/processos/{vagaId}/encerramento` com body `{"idVaga":4}` (ID numérico real da vaga) e consulta `GET /api/v1/candidaturas/processos/{vagaId}/prontidao`. Ambos retornam `vagaId`, `idVaga`, `inscricoes`, `avaliacoes` e `apto`. Prontidão só existe após fechamento; IDs divergentes/inscrições fechadas retornam 409. Essas rotas são internas por convenção, sem autenticação implementada. Vagas traduz indisponibilidade/timeout para 503 e resposta inconsistente para 502. Não há transação distribuída; repetir fechamento recupera falha parcial.
+
+`ResultadoPublicado` mantém o record original (`eventId`, `ocorridoEm`, `vagaId`), sem mudança no shared-contracts. Após consumo, a consulta definitiva retorna `publicacao`, `ranking`, `inscricoes` e `avaliacoes`. Reentrega igual não altera nada; evento divergente ou JSON inválido segue diretamente para `vagas.resultados.DLT`. Falhas transitórias usam três tentativas totais com o mesmo backoff do consumidor de candidaturas. Confirmação do offset ocorre após a transação. [ADR-008](adr/ADR-008-publicacao-resultado.md) e [evidências](evidencias/publicacao-resultado.md).
 
 No consumidor implementado, o resultado é gravado antes do retorno do listener e da confirmação do offset. Uma reentrega encontra a avaliação existente e não soma pontos novamente. Falhas transitórias têm três tentativas totais; JSON inválido ou evento divergente do snapshot segue diretamente para `candidaturas.realizadas.DLT`. Os tópicos de entrada e DLT têm três partições no ambiente local. Se o envio à DLT falhar, a recuperação não é considerada concluída. O replay da DLT é manual, com os mesmos IDs, chave e payload após corrigir a causa.
