@@ -1,6 +1,7 @@
 package br.com.ada.selecaointerna.vagasservice;
 
 import br.com.ada.selecaointerna.contracts.CriteriosVagaDto;
+import br.com.ada.selecaointerna.contracts.StatusVaga;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -14,6 +15,7 @@ import java.util.UUID;
 @Transactional(readOnly = true)
 public class VagasService {
   private final VagaRepository repository;
+  private final ProcessoCandidaturasClient candidaturas;
 
   public List<VagaOutputDto> obterTodasVagas() {
     return repository.findAll().stream().map(VagaOutputDto::new).toList();
@@ -34,7 +36,30 @@ public class VagasService {
   }
 
   @Transactional
-  public void removerVaga(Long id) { repository.delete(buscar(id)); }
+  public void removerVaga(Long id) {
+    Vaga vaga = repository.bloquearPorId(id)
+        .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Vaga nao encontrada"));
+    if (vaga.getStatus() != StatusVaga.ABERTA) {
+      throw new ResponseStatusException(HttpStatus.CONFLICT, "Vaga com processo iniciado nao pode ser excluida");
+    }
+    repository.delete(vaga);
+  }
+
+  @Transactional
+  public VagaOutputDto encerrarInscricoes(UUID id) {
+    Vaga vaga = bloquear(id);
+    if (vaga.getStatus() != StatusVaga.ABERTA && vaga.getStatus() != StatusVaga.EM_AVALIACAO) {
+      throw new ResponseStatusException(HttpStatus.CONFLICT, "Transicao de vaga invalida");
+    }
+    candidaturas.encerrar(vaga.getVagaId(), vaga.getIdVaga());
+    vaga.alterarStatus(StatusVaga.EM_AVALIACAO);
+    return new VagaOutputDto(vaga);
+  }
+
+  private Vaga bloquear(UUID id) {
+    return repository.bloquear(id)
+        .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Vaga nao encontrada"));
+  }
 
   private Vaga buscar(Long id) {
     return repository.findById(id)

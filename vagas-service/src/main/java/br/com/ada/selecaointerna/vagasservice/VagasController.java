@@ -43,4 +43,7 @@ public class VagasController {
     return service.obterCriterios(id);
   }
 
+  @PostMapping("/{id}/encerramento")
+  public VagaOutputDto encerrarInscricoes(@PathVariable UUID id) { return service.encerrarInscricoes(id); }
+
 }

@@ -13,3 +13,6 @@ spring:
       ddl-auto: validate
   flyway:
     enabled: true
+integracoes:
+  candidaturas-url: ${CANDIDATURAS_SERVICE_URL:http://localhost:8083}
+  timeout-ms: ${INTEGRACOES_TIMEOUT_MS:2000}

@@ -31,4 +31,6 @@ public class Vaga {
     requisitos = input.requisitos().stream().map(Requisito::new)
         .collect(java.util.stream.Collectors.toCollection(ArrayList::new));
   }
+
+  void alterarStatus(StatusVaga novoStatus) { status = novoStatus; }
 }
