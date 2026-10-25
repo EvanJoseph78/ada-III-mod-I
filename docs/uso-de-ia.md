@@ -71,3 +71,10 @@ Registrar para cada contribuição relevante: tarefa, sugestão da IA, decisão 
 - **Evolução funcional:** as rotas de currículo do colaborador passaram a filtrar experiências ou formação; foi acrescentado um teste de integração para esse comportamento.
 - **Validação pela IA:** `mvn -o clean verify` aprovado com sete testes. Os três serviços iniciaram com PostgreSQL 17.11; cadastro, leitura, currículo filtrado, duplicata 409 e permanência dos dados após reiniciar os processos foram conferidos por HTTP. O banco já estava disponível; não foi necessário instalar Docker nem apagar volumes.
 - **Limites:** o resultado não comprova Kafka, cache, Pact, consumidor idempotente ou execução a partir de clone limpo. Evidências em [persistencia.md](evidencias/persistencia.md). Revisão do diff pelo grupo e publicação no remoto continuam a cargo do responsável.
+
+
+## 24/10/2026 — contrato HTTP Candidaturas → Vagas
+
+A IA implementou Pact com cliente real do consumidor e API/JPA reais do provedor com H2, em commits separados. O plano de mensagem ResultadoPublicado foi substituído para o primeiro contrato obrigatório, justificando a escolha na ADR-007; não foi apresentada publicação como implementada. Foram usados os guias oficiais Pact JUnit 5, com versão de teste centralizada e sem Pact Broker/publicação externa.
+
+A IA executou quatro cenários de consumidor, sete verificações do provedor e comparação automática do JSON. A primeira execução do provedor detectou estados ausentes por interação; o contrato foi corrigido e regenerado. Um experimento temporário de campo incompatível fez provedor e comparação falharem; o arquivo original foi restaurado. Build limpo completo: 54 testes aprovados, sem Docker. Uma classe inconsistente do compilador do editor foi eliminada por compilação limpa. O grupo ainda precisa revisar as expectativas, repetir a demo e conferir o escopo; a execução pela IA não comprova revisão humana. Evidência em [contrato HTTP](evidencias/contrato-http-vagas.md).

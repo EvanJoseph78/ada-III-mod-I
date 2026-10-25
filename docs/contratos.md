@@ -2,6 +2,12 @@
 
 Os DTOs e eventos estão em `shared-contracts`. Qualquer mudança passa pelo responsável pelo módulo.
 
+## Contrato executável implementado
+
+Candidaturas consome Vagas por HTTP. `VagasContractConsumerTest` exercita `DadosCandidaturaClient` e gera o Pact das consultas por ID numérico e critérios por UUID. `VagasContractProviderTest` verifica o [JSON versionado](../shared-contracts/pacts/candidaturas-service-vagas-service.json) contra a aplicação Vagas real com H2. Ambos rodam em `mvn verify`, sem Docker; há comparação automática entre JSON gerado e versionado. [Como atualizar](../shared-contracts/pacts/README.md), [evidências](evidencias/contrato-http-vagas.md) e [ADR-007](adr/ADR-007-contrato-http-vagas.md).
+
+Este par atende ao requisito de um contrato executável entre dois serviços. O plano de mensagem `ResultadoPublicado` da ADR-002 foi substituído para essa primeira entrega; publicação do resultado e contrato de mensagem ainda não estão implementados.
+
 ## HTTP
 
 | Serviço | Rota | Resposta |

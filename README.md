@@ -19,7 +19,7 @@ Cada serviço usa sua própria base PostgreSQL e seu próprio usuário. Kafka tr
 
 Perfil alvo: **A — Docker em máquina pessoal**.
 
-Estado atual: aplicações Spring Boot 3.5.9 com Java 21, persistência JPA e migrações Flyway nos três bancos. A inscrição consulta perfil/critérios por HTTP, grava snapshots e outbox e é avaliada por consumidor Kafka idempotente, com retry/DLT. Ranking parcial e cache-aside Redis estão implementados e validados. Há 43 testes sem Docker (H2, Caffeine e Kafka KRaft embarcado) e evidências com infraestrutura local. Publicação do resultado da vaga e Pact continuam pendentes. Os profiles Maven A/B/C continuam como marcadores e não configuram os ambientes.
+Estado atual: aplicações Spring Boot 3.5.9 com Java 21, persistência JPA e migrações Flyway nos três bancos. A inscrição consulta perfil/critérios por HTTP, grava snapshots e outbox e é avaliada por consumidor Kafka idempotente, com retry/DLT. Ranking parcial e cache-aside Redis estão implementados e validados. O contrato executável Pact HTTP Candidaturas → Vagas também está implementado. O build completo passou com 54 testes. A suíte usa H2, Caffeine, Pact e Kafka KRaft embarcado, sem Docker, e há evidências com infraestrutura local. Publicação do resultado da vaga continua pendente. Os profiles Maven A/B/C continuam como marcadores e não configuram os ambientes.
 
 ### Build e testes sem Docker
 
@@ -32,6 +32,12 @@ mvn clean verify
 O reactor compila primeiro `shared-contracts`, executa os testes e gera os JARs dos serviços. Os testes usam o profile Spring `test`, ativado pelas classes de teste, com H2 em modo PostgreSQL e as mesmas migrações Flyway da aplicação. O profile Spring `test` não é o profile Maven B. O resultado e seus limites estão em [persistencia.md](docs/evidencias/persistencia.md).
 
 `FluxoKafkaTest` inicia um broker KRaft na JVM, em portas livres, para verificar publicação/consumo, reentrega, retry e DLT. Não precisa do Kafka local nem de Docker. O teste usa cliente/broker 3.9.1, gerenciados pelas dependências; a infraestrutura do Compose declara Kafka 4.1.1. Evidências e limites em [fluxo-assincrono.md](docs/evidencias/fluxo-assincrono.md).
+
+### Contrato executável entre serviços
+
+O Pact cobre as consultas de vaga/critérios usadas por Candidaturas. O consumidor usa `DadosCandidaturaClient` real; o provedor verifica o [JSON versionado](shared-contracts/pacts/candidaturas-service-vagas-service.json) contra Vagas com HTTP real em porta aleatória, controller/JPA e H2. São quatro testes de consumidor e sete interações verificadas pelo provedor, executados pelo build padrão sem Docker ou Pact Broker.
+
+A geração escreve em `target/pacts` e a execução normal compara com a cópia versionada. Para alterar expectativas, seguir o [procedimento de atualização](shared-contracts/pacts/README.md). [ADR-007](docs/adr/ADR-007-contrato-http-vagas.md) e [evidências](docs/evidencias/contrato-http-vagas.md) explicam o escopo: este contrato atende ao CORE, mas não implementa publicação do resultado nem verifica `ResultadoPublicado`.
 
 ### Serviços com PostgreSQL
 

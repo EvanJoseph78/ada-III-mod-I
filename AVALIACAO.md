@@ -2,7 +2,7 @@
 
 Grupo e papéis: 3 integrantes — André, Evandro e Rafael (papéis a registrar).
 
-Perfil alvo: A (Docker). Infraestrutura, persistência, inscrição/avaliação e ranking/cache possuem evidências de execução. Publicação do resultado, Pact e execução a partir de clone limpo continuam pendentes. Os profiles Maven A/B/C continuam como marcadores.
+Perfil alvo: A (Docker). Infraestrutura, persistência, inscrição/avaliação e ranking/cache possuem evidências de execução. Pact HTTP Candidaturas → Vagas é executável sem Docker. Publicação do resultado e execução a partir de clone limpo continuam pendentes. Os profiles Maven A/B/C continuam como marcadores.
 
 | Critério | Peso | Estado | Evidência |
 | --- | --- | --- | --- |
@@ -11,10 +11,10 @@ Perfil alvo: A (Docker). Infraestrutura, persistência, inscrição/avaliação 
 | 3. Idempotência e consistência | 12 | Implementada na avaliação | [Fluxo assíncrono](docs/evidencias/fluxo-assincrono.md): resultado único, bloqueio transacional, reentrega/concorrência e reenvio após reiniciar a aplicação sem duplicar; atomicidade da outbox testada |
 | 4. Cache | 10 | Implementado no ranking | [ADR-006](docs/adr/ADR-006-cache-ranking.md): cache-aside, TTL e invalidação lógica por revisão. [Evidência](docs/evidencias/cache-ranking.md): 13 testes de ranking/cache, concorrência/rollback/fallback e Redis 7.4.11 real aprovados |
 | 5. Resiliência | 12 | Parcial | [Fluxo assíncrono](docs/evidencias/fluxo-assincrono.md): timeouts HTTP, retomada da outbox, retry exponencial e DLT; testes de falha transitória, persistente e JSON inválido. Operação de replay manual e demais fluxos a evoluir |
-| 6. Testabilidade | 13 | Em andamento | [ADR-002](docs/adr/ADR-002-estrategia-de-testes.md): estratégia definida. 43 testes no build completo sem Docker, incluindo [fluxo assíncrono](docs/evidencias/fluxo-assincrono.md) e [ranking/cache](docs/evidencias/cache-ranking.md). Pact e suíte Testcontainers pendentes |
-| 7. Decisões arquiteturais | 13 | Em andamento | ADRs [001](docs/adr/ADR-001-uso-de-docker.md), [002](docs/adr/ADR-002-estrategia-de-testes.md), [003](docs/adr/ADR-003-heranca-maven.md), [004](docs/adr/ADR-004-persistencia-por-servico.md), [005](docs/adr/ADR-005-fluxo-assincrono.md) e [006](docs/adr/ADR-006-cache-ranking.md). Publicação e contrato executável a concluir |
+| 6. Testabilidade | 13 | Contrato executável implementado | [ADR-007](docs/adr/ADR-007-contrato-http-vagas.md) e [evidência Pact](docs/evidencias/contrato-http-vagas.md): consumidor com cliente real, sete verificações contra API/JPA real do provedor e proteção contra JSON desatualizado; build sem Docker. Testcontainers continua pendente, sem ser requisito CORE isolado |
+| 7. Decisões arquiteturais | 13 | Em andamento | ADRs [001](docs/adr/ADR-001-uso-de-docker.md), [002](docs/adr/ADR-002-estrategia-de-testes.md), [003](docs/adr/ADR-003-heranca-maven.md), [004](docs/adr/ADR-004-persistencia-por-servico.md), [005](docs/adr/ADR-005-fluxo-assincrono.md), [006](docs/adr/ADR-006-cache-ranking.md) e [007](docs/adr/ADR-007-contrato-http-vagas.md). Decisão de publicação e revisão final pendentes |
 | 8. Uso crítico de IA | 5 | Em registro | [Uso de IA](docs/uso-de-ia.md): sugestão sobre Maven, decisão humana, limitação de escopo e validação pela IA. Revisão final do grupo pendente |
-| 9. Execução comprovada | 5 | Parcial | [Infraestrutura](docs/evidencias/execucao-infra.md), [persistência](docs/evidencias/persistencia.md), [inscrição/avaliação Kafka](docs/evidencias/fluxo-assincrono.md) e [ranking/Redis](docs/evidencias/cache-ranking.md) comprovados. Publicação/Pact e clone limpo pendentes |
+| 9. Execução comprovada | 5 | Parcial | [Infraestrutura](docs/evidencias/execucao-infra.md), [persistência](docs/evidencias/persistencia.md), [inscrição/avaliação Kafka](docs/evidencias/fluxo-assincrono.md), [ranking/Redis](docs/evidencias/cache-ranking.md) e [Pact HTTP](docs/evidencias/contrato-http-vagas.md) comprovados. Publicação e clone limpo pendentes |
 
 ## Validação do build — 2026-10-22
 
@@ -49,6 +49,10 @@ Etapa 1: endpoint de ranking parcial implementado, com dois testes de filtro/ord
 Etapa 2: Redis/Caffeine, cache-aside e chave por revisão implementados; seis testes direcionados aprovados. A contagem das avaliações muda a chave no commit e evita depender de um evento de invalidação separado. Validação de falhas/TTL e Redis real ainda pendente.
 
 Etapa 3: build completo aprovado com 43 testes. Concorrência, expiração, rollback e fallback testados; Redis 7.4.11 real confirmou preenchimento/hit, revisão após novas avaliações, TTL e fallback de conexão/JSON. O requisito de cache com estratégia e invalidação explícitas está atendido nesta branch. As pendências da etapa anterior foram concluídas; publicação do resultado/Pact e clone limpo permanecem.
+
+## Evolução — contrato executável HTTP
+
+O primeiro contrato obrigatório está implementado para Candidaturas → Vagas, conforme [ADR-007](docs/adr/ADR-007-contrato-http-vagas.md), substituindo a previsão inicial de mensagem da ADR-002. O cliente real do consumidor gera expectativas e Vagas verifica sete interações contra sua API/JPA reais com H2. O JSON versionado é comparado com o gerado; incompatibilidade foi introduzida temporariamente, detectada e restaurada. `mvn -o clean verify` passou com **54 testes**. [Evidências e limites](docs/evidencias/contrato-http-vagas.md). Publicação de resultado, clone limpo, revisão humana final e ensaio continuam pendentes.
 
 ## Opcionais (grupo de três integrantes)
 

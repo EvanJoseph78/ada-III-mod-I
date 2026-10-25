@@ -25,9 +25,9 @@ Adotar **duas suítes de testes**, separadas por etiqueta do JUnit 5:
 
 Os cenários de comportamento (idempotência, retry/DLQ, invalidação de cache) são escritos primeiro na suíte sem Docker. A suíte com Docker repete um conjunto menor de cenários contra a infraestrutura real, para verificar o que os componentes embarcados não cobrem.
 
-**Contratos executáveis.** O Pact de mensagem cobre `ResultadoPublicado` (Vagas produz, Candidaturas consome). O consumidor (Candidaturas) gera o arquivo de pact em `shared-contracts/pacts` e o produtor (Vagas) o verifica. Os arquivos de pact são versionados no repositório, sem Pact Broker, e nenhum desses testes depende de Docker.
+**Contratos executáveis.** O plano inicial era o Pact de mensagem de `ResultadoPublicado`. A [ADR-007](ADR-007-contrato-http-vagas.md) substitui essa escolha para o primeiro contrato: Candidaturas usa seu cliente HTTP real para gerar expectativas das consultas de vaga/critérios, e Vagas verifica o JSON versionado contra sua aplicação real com H2. A geração ocorre em `target/pacts`, a cópia revisada fica em `shared-contracts/pacts`, sem Pact Broker ou Docker. Publicação do resultado e Pact de mensagem continuam fora da implementação atual.
 
-`CandidaturaRealizada` é interno ao serviço de Candidaturas e não é objeto de contract test. O endpoint `GET /vagas/{id}/criterios` é coberto por teste de integração; um segundo par de contratos (Pact HTTP) é opcional, se sobrar tempo.
+`CandidaturaRealizada` é interno ao serviço de Candidaturas e não é objeto de contract test. O primeiro par executável cobre `GET /api/v1/vagas/{idVaga}` e `GET /api/v1/vagas/{vagaId}/criterios`.
 
 ## Alternativas consideradas
 
@@ -59,7 +59,7 @@ Os cenários de comportamento (idempotência, retry/DLQ, invalidação de cache)
 ## Evidências e acompanhamento
 
 - Configuração dos perfis Maven e da exclusão da etiqueta `docker`: `pom.xml` (pendente).
-- Contrato executável: `shared-contracts/pacts` e sua verificação (pendente).
+- Contrato executável: JSON em `shared-contracts/pacts`, testes de consumidor/provedor e proteção contra divergência implementados; [evidências](../evidencias/contrato-http-vagas.md).
 - Primeiro conjunto implementado: seis testes HTTP/JPA com H2, migrações Flyway e validação de schema; resultado sem Docker em [persistencia.md](../evidencias/persistencia.md) e `AVALIACAO.md`. Os demais componentes da estratégia continuam pendentes.
 - Evolução em 2026-10-24: 30 testes no build completo, incluindo 25 de Candidaturas com HTTP, H2, outbox, cálculo, concorrência e Kafka KRaft embarcado. Resultado em [fluxo-assincrono.md](../evidencias/fluxo-assincrono.md). Pact, cache e suíte Testcontainers permanecem pendentes.
 - Após o cache, o build completo passou com 43 testes, incluindo Caffeine com relógio controlado, invalidação, rollback/concorrência/fallback e serialização Redis. Validação com Redis local registrada em [cache-ranking.md](../evidencias/cache-ranking.md). Cache está concluído; Pact e suíte Testcontainers continuam pendentes.
@@ -72,4 +72,4 @@ Pendências:
 - [ ] Configurar o perfil A para incluir os testes `docker`.
 - [x] Escrever teste de idempotência e concorrência sem Docker, incluindo reentrega pelo Kafka.
 - [x] Escrever teste de retry transitório, esgotamento de tentativas e mensagem inválida para DLT (a DLQ deste fluxo).
-- [ ] Gerar e verificar o contract test de `ResultadoPublicado`.
+- [x] Gerar e verificar um contrato entre dois serviços: Pact HTTP Candidaturas → Vagas, conforme ADR-007. Pact de `ResultadoPublicado` permanece uma possível evolução.

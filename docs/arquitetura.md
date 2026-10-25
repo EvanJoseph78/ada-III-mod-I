@@ -1,6 +1,6 @@
 # Arquitetura — estado atual e evolução
 
-Atualizada em 2026-10-24. Três serviços com bases e credenciais próprias; entidades JPA não são compartilhadas. Inscrição, avaliação e ranking parcial com cache-aside estão implementados. Publicação do resultado da vaga e Pact continuam pendentes.
+Atualizada em 2026-10-24. Três serviços com bases e credenciais próprias; entidades JPA não são compartilhadas. Inscrição, avaliação, ranking parcial com cache-aside e contrato executável HTTP Candidaturas → Vagas estão implementados. Publicação do resultado da vaga continua pendente.
 
 | Contexto | Responsabilidade | Dados próprios |
 | --- | --- | --- |
@@ -74,11 +74,11 @@ Na aplicação o backend é Redis com JSON tipado e timeouts de 300 ms; nos test
 
 O perfil alvo A usa Kafka, PostgreSQL e Redis no Compose; os serviços executam na JVM. A outbox e as avaliações usam o banco exclusivo de Candidaturas. Os tópicos de candidatura e DLT têm três partições e fator de replicação 1, adequado somente ao nó local de desenvolvimento.
 
-A suíte padrão usa H2 e Kafka KRaft embarcado, sem Docker. Testes verificam consultas HTTP, snapshots, atomicidade da outbox, cálculo, reentrega, concorrência, retry e DLT. Evidências e comandos em [fluxo-assincrono.md](evidencias/fluxo-assincrono.md). Testes com H2/broker embarcado e validação com a infraestrutura real são evidências distintas.
+A suíte padrão usa H2, Caffeine e Kafka KRaft embarcado, sem Docker. Testes verificam consultas HTTP, snapshots, atomicidade da outbox, cálculo, reentrega, concorrência, retry/DLT e cache. O Pact exercita o cliente real de Candidaturas e verifica a API real de Vagas em porta aleatória com H2; a cópia versionada permite testar o provedor independentemente da ordem do reactor. Geração e verificação em [contrato HTTP](evidencias/contrato-http-vagas.md), decisão na [ADR-007](adr/ADR-007-contrato-http-vagas.md). Testes embarcados e validação com infraestrutura real são evidências distintas.
 
 ## Entregas ainda pendentes
 
-- Publicação do resultado da vaga e evento `ResultadoPublicado` com Pact entre Vagas e Candidaturas.
+- Publicação do resultado da vaga e evento `ResultadoPublicado`. O primeiro Pact já cobre a integração HTTP entre Vagas e Candidaturas; não comprova esse evento planejado.
 - Evento `AvaliacaoConcluida`, se mantido no desenho final; ainda não é emitido. A consulta atual de ranking e sua invalidação leem a revisão no próprio banco e não dependem desse segundo evento.
 - Revisão da política de exclusão de vaga, operações de correção/replay e retenção de eventos.
 - Reprodução a partir de clone limpo e demonstração de todos os requisitos obrigatórios.
