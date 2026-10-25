@@ -2,7 +2,7 @@
 
 Grupo e papéis: 3 integrantes — André, Evandro e Rafael (papéis a registrar).
 
-Perfil de referência: A, com infraestrutura Docker e aplicações JVM conforme ADR-001. Verificação efetiva: três JARs contra dependências locais, com fluxo até CONCLUIDA e reinícios; não se afirma recriação de contêineres nessa sessão. Suíte B/padrão sem Docker aprovada com **76 testes**, usando H2/Caffeine/Kafka embarcado/Pact. A/B configuram filtros de testes; não iniciam infraestrutura. Evidências de clone limpo serão registradas após sua execução. Revisão humana e ensaio do grupo não foram realizados pela IA.
+Perfil de referência: A, com infraestrutura Docker e aplicações JVM conforme ADR-001. Verificação efetiva: três JARs contra dependências locais, com fluxo até CONCLUIDA e reinícios; não se afirma recriação de contêineres nessa sessão. Suíte B/padrão sem Docker aprovada com **76 testes**, usando H2/Caffeine/Kafka embarcado/Pact. A/B configuram filtros de testes; não iniciam infraestrutura. [Clone local limpo e execução com seus JARs](docs/evidencias/entrega-final.md) aprovados. Revisão humana e ensaio do grupo não foram realizados pela IA.
 
 | Critério | Peso | Estado | Evidência |
 | --- | --- | --- | --- |

@@ -111,4 +111,4 @@ Vagas exige estado EM_AVALIACAO e prontidão (incluindo avaliações inelegívei
 - Revisão humana do grupo, papéis e ensaio cronometrado. O Pact cobre consultas HTTP de Vagas; os novos endpoints/eventos têm testes de integração, sem um segundo Pact.
 - Evento `AvaliacaoConcluida`, se mantido no desenho final; ainda não é emitido. A consulta atual de ranking e sua invalidação leem a revisão no próprio banco e não dependem desse segundo evento.
 - Revisão da política de exclusão de vaga, operações de correção/replay e retenção de eventos.
-- Reprodução a partir de clone limpo e revisão final documentadas nas evidências de entrega, conforme forem concluídas.
+- [Clone local limpo e execução com seus JARs](evidencias/entrega-final.md) aprovados, com 76 testes. Revisão humana/ensaio ainda devem ser feitos pelo grupo.

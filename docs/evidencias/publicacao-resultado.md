@@ -72,4 +72,6 @@ O helper usa por padrão portas 18081/18082/18083 livres; podem ser alteradas pe
 
 ### Limites
 
+A repetição a partir de clone local limpo também passou: [verificação final](entrega-final.md), build de 76 testes e novo fluxo com os JARs do clone.
+
 Não é teste de carga, alta disponibilidade, segurança ou retificação de resultado. Não foi derrubado o broker compartilhado: falhas de envio são testadas na suíte, e a execução real demonstrou pausa explícita de mensageria e retomada após reinício. Não há confirmação distribuída de consumo no status CONCLUIDA; consultar o resultado definitivo separadamente. Inscrições antigas sem avaliação exigem tratamento antes de publicar a vaga correspondente.

@@ -156,6 +156,8 @@ Esse comando valida apenas a estrutura. Para compilar, empacotar e executar os t
 
 ## Documentação
 
+[Verificação final](docs/evidencias/entrega-final.md): clone local limpo com 76 testes e execução do fluxo com os JARs desse clone. O checklist técnico CORE está atendido no recorte declarado; revisão humana, papéis e ensaio da banca continuam sob responsabilidade do grupo.
+
 - [Arquitetura](docs/arquitetura.md)
 - [ADRs](docs/adr/README.md)
 - [Autoavaliação](AVALIACAO.md)
