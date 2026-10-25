@@ -19,7 +19,7 @@ Cada serviço usa sua própria base PostgreSQL e seu próprio usuário. Kafka tr
 
 Perfil alvo: **A — Docker em máquina pessoal**.
 
-Estado atual: aplicações Spring Boot 3.5.9 com Java 21, persistência JPA e migrações Flyway nos três bancos. A inscrição consulta perfil/critérios por HTTP, grava snapshots e outbox e é avaliada por consumidor Kafka idempotente, com retry/DLT. Há 30 testes sem Docker (H2 e Kafka KRaft embarcado) e validação do fluxo com infraestrutura local. Ranking parcial e cache-aside estão implementados e em validação; publicação do resultado da vaga e Pact continuam pendentes. Os profiles Maven A/B/C continuam como marcadores e não configuram os ambientes.
+Estado atual: aplicações Spring Boot 3.5.9 com Java 21, persistência JPA e migrações Flyway nos três bancos. A inscrição consulta perfil/critérios por HTTP, grava snapshots e outbox e é avaliada por consumidor Kafka idempotente, com retry/DLT. Ranking parcial e cache-aside Redis estão implementados e validados. Há 43 testes sem Docker (H2, Caffeine e Kafka KRaft embarcado) e evidências com infraestrutura local. Publicação do resultado da vaga e Pact continuam pendentes. Os profiles Maven A/B/C continuam como marcadores e não configuram os ambientes.
 
 ### Build e testes sem Docker
 
@@ -41,7 +41,7 @@ Com Docker disponível, iniciar o banco sem apagar volumes:
 docker compose up -d --wait postgres
 ```
 
-Para a avaliação assíncrona, iniciar também Kafka com `docker compose up -d --wait kafka` antes de Candidaturas. Redis ainda não é utilizado pelo fluxo implementado.
+Para a avaliação assíncrona, iniciar também Kafka com `docker compose up -d --wait kafka` antes de Candidaturas. Para o cache do ranking, iniciar Redis com `docker compose up -d --wait redis`; na indisponibilidade a consulta usa o banco.
 
 O Compose cria os bancos e usuários na primeira inicialização do volume. Os padrões locais são:
 
@@ -74,6 +74,8 @@ O roteiro de cadastro, consulta e verificação após reiniciar está em [persis
 `GET /api/v1/candidaturas/ranking/{vagaId}` consulta o ranking parcial de elegíveis, por UUID da vaga. Redis é usado como cache-aside, com `REDIS_HOST` (localhost), `REDIS_PORT` (6379), `REDIS_PASSWORD` (vazio por padrão) e `RANKING_CACHE_TTL_SEGUNDOS` (60). Os timeouts de conexão/comando são 300 ms. Configurar as mesmas credenciais do ambiente; as aplicações Java não carregam o `.env` automaticamente.
 
 A chave inclui a revisão (total de avaliações da vaga): um novo resultado confirmado invalida logicamente a entrada anterior, que expira pelo TTL. A revisão é consultada no banco em cada GET, mesmo no cache hit. Em falha de Redis, o ranking é lido do banco; não há fallback silencioso para cache local na aplicação. `RANKING_CACHE_TIPO=caffeine` é uma substituição explícita usada nos testes sem Docker, não uma topologia de cache distribuído. Ver [ADR-006](docs/adr/ADR-006-cache-ranking.md) e [evidências](docs/evidencias/cache-ranking.md).
+
+Na validação real com Redis 7.4.11 foram comprovados hit sem repetir a consulta completa, chave nova após avaliação, expiração e fallback por falha de conexão/JSON inválido. O TTL padrão é desde a escrita, não é renovado por leituras. Avaliações são imutáveis; edição/exclusão/restauração de dados exige rever a revisão e limpar o namespace correspondente. Se a resposta passar a incluir outros dados mutáveis, eles também deverão participar da revisão. Este ranking parcial não é o resultado publicado da vaga.
 
 ### Kafka e avaliação
 

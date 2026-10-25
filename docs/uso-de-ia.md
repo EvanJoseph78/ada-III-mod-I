@@ -1,5 +1,13 @@
 # Uso crítico de IA
 
+## 2026-10-24 — Cache, etapa 3
+
+A IA adicionou testes de expiração com relógio controlado, preenchimento antigo atrasado, rollback após escrita e fallback sem ocultar falha da fonte. A serialização JSON tipada também foi verificada. O build completo aprovou 43 testes sem Docker.
+
+Na verificação real, a IA usou Redis 7.4.11, PostgreSQL e os três serviços: confirmou cache hit sem repetir a consulta completa, novas revisões após avaliações e expiração com TTL reduzido a 5 segundos apenas na instância de teste. JSON inválido foi injetado/restaurado somente na chave de uma vaga fictícia; uma instância isolada com porta Redis indisponível confirmou fallback sem parar o servidor compartilhado. Não houve FLUSH ou exclusão de volumes. O bloqueio de execução de scripts do Windows exigiu aprovação para liberar somente o processo do helper local, sem mudança permanente de política.
+
+Decisões e limitações estão na ADR-006: ainda há contagem indexada no banco em cada GET; a revisão depende de resultados imutáveis e não foi alegado ganho percentual de latência. O grupo deve revisar a regra de desempate e a futura publicação de resultados; Pact e clone limpo continuam pendentes.
+
 ## 2026-10-24 — Cache, etapa 2
 
 A IA implementou cache-aside com Redis, JSON tipado, TTL e substituição explícita por Caffeine nos testes. A invalidação é lógica por revisão (contagem de avaliações confirmadas por vaga), evitando repovoamento de uma chave nova por uma leitura antiga. Seis testes de ranking/cache foram aprovados. A documentação registra o custo da consulta de revisão em cada GET e a restrição a avaliações imutáveis; não foi alegada redução percentual de latência. Falhas, concorrência, TTL e Redis real seguem na próxima etapa.

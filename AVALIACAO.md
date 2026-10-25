@@ -2,19 +2,19 @@
 
 Grupo e papéis: 3 integrantes — André, Evandro e Rafael (papéis a registrar).
 
-Perfil alvo: A (Docker). Infraestrutura, persistência e fluxo de inscrição/avaliação possuem evidências de execução. Ranking/cache, publicação do resultado, Pact e execução a partir de clone limpo continuam pendentes. Os profiles Maven A/B/C continuam como marcadores.
+Perfil alvo: A (Docker). Infraestrutura, persistência, inscrição/avaliação e ranking/cache possuem evidências de execução. Publicação do resultado, Pact e execução a partir de clone limpo continuam pendentes. Os profiles Maven A/B/C continuam como marcadores.
 
 | Critério | Peso | Estado | Evidência |
 | --- | --- | --- | --- |
 | 1. Decomposição de domínio | 15 | Em andamento | [Arquitetura](docs/arquitetura.md) e [ADR-004](docs/adr/ADR-004-persistencia-por-servico.md): entidades, repositórios e migrações próprios por serviço. [Infraestrutura](docs/evidencias/execucao-infra.md): segregação dos bancos. [Testes H2 e validação PostgreSQL](docs/evidencias/persistencia.md) aprovados, inclusive após reiniciar os três serviços |
 | 2. Comunicação assíncrona | 15 | Implementada no fluxo de candidatura | [ADR-005](docs/adr/ADR-005-fluxo-assincrono.md) e [fluxo assíncrono](docs/evidencias/fluxo-assincrono.md): outbox, produtor, listener Kafka e avaliação persistida; testes e execução local aprovados |
 | 3. Idempotência e consistência | 12 | Implementada na avaliação | [Fluxo assíncrono](docs/evidencias/fluxo-assincrono.md): resultado único, bloqueio transacional, reentrega/concorrência e reenvio após reiniciar a aplicação sem duplicar; atomicidade da outbox testada |
-| 4. Cache | 10 | Em validação | [ADR-006](docs/adr/ADR-006-cache-ranking.md): cache-aside, TTL e invalidação lógica por revisão. [Testes de ranking/cache](docs/evidencias/cache-ranking.md) aprovados com Caffeine; TTL, falhas/concorrência e Redis real seguem na etapa 3 |
+| 4. Cache | 10 | Implementado no ranking | [ADR-006](docs/adr/ADR-006-cache-ranking.md): cache-aside, TTL e invalidação lógica por revisão. [Evidência](docs/evidencias/cache-ranking.md): 13 testes de ranking/cache, concorrência/rollback/fallback e Redis 7.4.11 real aprovados |
 | 5. Resiliência | 12 | Parcial | [Fluxo assíncrono](docs/evidencias/fluxo-assincrono.md): timeouts HTTP, retomada da outbox, retry exponencial e DLT; testes de falha transitória, persistente e JSON inválido. Operação de replay manual e demais fluxos a evoluir |
-| 6. Testabilidade | 13 | Em andamento | [ADR-002](docs/adr/ADR-002-estrategia-de-testes.md): estratégia definida. [Persistência](docs/evidencias/persistencia.md): 30 testes no build completo sem Docker, incluindo Kafka KRaft, idempotência e falhas conforme [fluxo assíncrono](docs/evidencias/fluxo-assincrono.md). Pact, cache e suíte Testcontainers pendentes |
-| 7. Decisões arquiteturais | 13 | Em andamento | [ADR-001](docs/adr/ADR-001-uso-de-docker.md), [ADR-002](docs/adr/ADR-002-estrategia-de-testes.md), [ADR-003](docs/adr/ADR-003-heranca-maven.md), [ADR-004](docs/adr/ADR-004-persistencia-por-servico.md) e [ADR-005](docs/adr/ADR-005-fluxo-assincrono.md). Cache e publicação de resultado a registrar |
+| 6. Testabilidade | 13 | Em andamento | [ADR-002](docs/adr/ADR-002-estrategia-de-testes.md): estratégia definida. 43 testes no build completo sem Docker, incluindo [fluxo assíncrono](docs/evidencias/fluxo-assincrono.md) e [ranking/cache](docs/evidencias/cache-ranking.md). Pact e suíte Testcontainers pendentes |
+| 7. Decisões arquiteturais | 13 | Em andamento | ADRs [001](docs/adr/ADR-001-uso-de-docker.md), [002](docs/adr/ADR-002-estrategia-de-testes.md), [003](docs/adr/ADR-003-heranca-maven.md), [004](docs/adr/ADR-004-persistencia-por-servico.md), [005](docs/adr/ADR-005-fluxo-assincrono.md) e [006](docs/adr/ADR-006-cache-ranking.md). Publicação e contrato executável a concluir |
 | 8. Uso crítico de IA | 5 | Em registro | [Uso de IA](docs/uso-de-ia.md): sugestão sobre Maven, decisão humana, limitação de escopo e validação pela IA. Revisão final do grupo pendente |
-| 9. Execução comprovada | 5 | Parcial | [Infraestrutura](docs/evidencias/execucao-infra.md): Kafka, PostgreSQL e Redis saudáveis no perfil A. [Persistência PostgreSQL](docs/evidencias/persistencia.md): três serviços iniciados e dados recuperados após reinício das aplicações; [inscrição/avaliação por HTTP/Kafka](docs/evidencias/fluxo-assincrono.md) comprovada com reentrega após reinício. Fluxo de ranking/publicação e clone limpo pendentes |
+| 9. Execução comprovada | 5 | Parcial | [Infraestrutura](docs/evidencias/execucao-infra.md), [persistência](docs/evidencias/persistencia.md), [inscrição/avaliação Kafka](docs/evidencias/fluxo-assincrono.md) e [ranking/Redis](docs/evidencias/cache-ranking.md) comprovados. Publicação/Pact e clone limpo pendentes |
 
 ## Validação do build — 2026-10-22
 
@@ -47,6 +47,8 @@ Etapa 4: listener Kafka, retry/DLT e verificação ponta a ponta concluídos. `m
 Etapa 1: endpoint de ranking parcial implementado, com dois testes de filtro/ordenação e resposta HTTP aprovados. Essa etapa ainda não utiliza cache. Decisão na [ADR-006](docs/adr/ADR-006-cache-ranking.md) e evidência em [cache-ranking.md](docs/evidencias/cache-ranking.md).
 
 Etapa 2: Redis/Caffeine, cache-aside e chave por revisão implementados; seis testes direcionados aprovados. A contagem das avaliações muda a chave no commit e evita depender de um evento de invalidação separado. Validação de falhas/TTL e Redis real ainda pendente.
+
+Etapa 3: build completo aprovado com 43 testes. Concorrência, expiração, rollback e fallback testados; Redis 7.4.11 real confirmou preenchimento/hit, revisão após novas avaliações, TTL e fallback de conexão/JSON. O requisito de cache com estratégia e invalidação explícitas está atendido nesta branch. As pendências da etapa anterior foram concluídas; publicação do resultado/Pact e clone limpo permanecem.
 
 ## Opcionais (grupo de três integrantes)
 

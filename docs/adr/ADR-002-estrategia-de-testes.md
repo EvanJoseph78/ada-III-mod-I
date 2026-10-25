@@ -62,6 +62,7 @@ Os cenários de comportamento (idempotência, retry/DLQ, invalidação de cache)
 - Contrato executável: `shared-contracts/pacts` e sua verificação (pendente).
 - Primeiro conjunto implementado: seis testes HTTP/JPA com H2, migrações Flyway e validação de schema; resultado sem Docker em [persistencia.md](../evidencias/persistencia.md) e `AVALIACAO.md`. Os demais componentes da estratégia continuam pendentes.
 - Evolução em 2026-10-24: 30 testes no build completo, incluindo 25 de Candidaturas com HTTP, H2, outbox, cálculo, concorrência e Kafka KRaft embarcado. Resultado em [fluxo-assincrono.md](../evidencias/fluxo-assincrono.md). Pact, cache e suíte Testcontainers permanecem pendentes.
+- Após o cache, o build completo passou com 43 testes, incluindo Caffeine com relógio controlado, invalidação, rollback/concorrência/fallback e serialização Redis. Validação com Redis local registrada em [cache-ranking.md](../evidencias/cache-ranking.md). Cache está concluído; Pact e suíte Testcontainers continuam pendentes.
 - Decisão anterior: [ADR-001](ADR-001-uso-de-docker.md).
 
 Pendências:

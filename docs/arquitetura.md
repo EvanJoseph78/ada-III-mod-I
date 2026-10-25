@@ -1,6 +1,6 @@
-﻿# Arquitetura — estado atual e evolução
+# Arquitetura — estado atual e evolução
 
-Atualizada em 2026-10-24. Três serviços com bases e credenciais próprias; entidades JPA não são compartilhadas. O fluxo de inscrição e avaliação está implementado. Ranking/cache e publicação do resultado da vaga ainda são pendentes.
+Atualizada em 2026-10-24. Três serviços com bases e credenciais próprias; entidades JPA não são compartilhadas. Inscrição, avaliação e ranking parcial com cache-aside estão implementados. Publicação do resultado da vaga e Pact continuam pendentes.
 
 | Contexto | Responsabilidade | Dados próprios |
 | --- | --- | --- |
@@ -41,7 +41,28 @@ Outbox e candidatura são gravadas atomicamente no PostgreSQL de Candidaturas. O
 
 O consumidor usa apenas o snapshot original. Bloqueio pessimista da candidatura e resultado único por candidatura/evento protegem contra reentrega e concorrência; a gravação da avaliação é transacional. O evento é interno ao serviço e deve coincidir com o payload persistido. As regras de cálculo estão na [ADR-005](adr/ADR-005-fluxo-assincrono.md).
 
-## Falhas e recuperação
+## Ranking e cache
+
+`GET /api/v1/candidaturas/ranking/{vagaId}` retorna apenas avaliações elegíveis, ordenadas por pontos decrescentes, data de inscrição crescente e UUID crescente. É uma consulta parcial enquanto há inscrições pendentes, não o resultado oficial publicado.
+
+```mermaid
+flowchart LR
+    GET[GET ranking por vaga] --> REV[Contar avaliações confirmadas da vaga]
+    REV --> CHAVE[Chave vagaId + revisão]
+    CHAVE --> REDIS[Redis: cache-aside]
+    REDIS -->|Hit| RESPOSTA[Ranking JSON]
+    REDIS -->|Miss ou falha| BANCO[Consultar classificação no banco]
+    BANCO --> RESPOSTA
+    BANCO -->|Preencher se cache disponível; TTL 60s| REDIS
+```
+
+Nova avaliação muda a revisão no mesmo commit em que fica visível. A próxima consulta procura outra chave; entradas antigas expiram pelo TTL. Uma leitura antiga atrasada preenche apenas a chave antiga e não sobrescreve a nova. Reentregas idempotentes e transações que sofrem rollback não mudam a revisão; avaliações de outra vaga não interferem.
+
+Essa invalidação é lógica, sem DEL global nem evento separado. Depende de avaliações imutáveis e somente inseridas; edição/exclusão/restauração de dados exige rever a revisão e limpar o namespace correspondente. Cada GET ainda consulta a revisão no banco, mesmo no hit, e não há promessa de leitura em cache quando o banco está indisponível. Em erro do cache, a consulta completa do banco é usada como fallback.
+
+Na aplicação o backend é Redis com JSON tipado e timeouts de 300 ms; nos testes padrão usa-se Caffeine explicitamente, sem Docker. Não é write-through. Custos, alternativas e limites estão na [ADR-006](adr/ADR-006-cache-ranking.md); evidências em [cache-ranking.md](evidencias/cache-ranking.md).
+
+## Falhas e recuperação do fluxo assíncrono
 
 - Envio Kafka que falha mantém a outbox pendente e interrompe o lote; um próximo ciclo tenta novamente.
 - O listener não confirma processamento antes da transação de avaliação terminar. Falhas transitórias têm até duas novas tentativas, com backoff exponencial (padrão 1 e 2 segundos).
@@ -57,8 +78,7 @@ A suíte padrão usa H2 e Kafka KRaft embarcado, sem Docker. Testes verificam co
 
 ## Entregas ainda pendentes
 
-- Ranking, cache com TTL/invalidação/fallback e testes.
 - Publicação do resultado da vaga e evento `ResultadoPublicado` com Pact entre Vagas e Candidaturas.
-- Evento `AvaliacaoConcluida` e seus consumidores de ranking/cache, se mantidos no desenho final; ainda não são emitidos.
+- Evento `AvaliacaoConcluida`, se mantido no desenho final; ainda não é emitido. A consulta atual de ranking e sua invalidação leem a revisão no próprio banco e não dependem desse segundo evento.
 - Revisão da política de exclusão de vaga, operações de correção/replay e retenção de eventos.
 - Reprodução a partir de clone limpo e demonstração de todos os requisitos obrigatórios.

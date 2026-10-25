@@ -1,6 +1,6 @@
 # ADR-006 — Ranking com cache-aside, revisão por vaga e fallback
 
-Status: aceita; implementação em etapas
+Status: aceita e implementada
 Data: 2026-10-24
 
 ## Contexto
@@ -30,6 +30,7 @@ O CORE exige um cache com estratégia e invalidação explícitas. A avaliação
 - Cada GET ainda faz uma contagem indexada por vaga. Não se afirma ganho de latência ou redução percentual sem medição; a redução verificada é da consulta completa de ranking em cache hit.
 - A contagem não é um contador O(1); uma tabela de revisão/paginação pode ser necessária em volume maior.
 - Não introduzir edição/exclusão de avaliações sem rever a estratégia: reutilizar uma revisão pode tornar uma entrada antiga válida indevidamente. Limpar/recriar dados também exige limpar o namespace do cache correspondente.
+- Se a resposta passar a incluir status/publicação da vaga ou outros dados mutáveis, essas mudanças também deverão participar da revisão. O cache atual contém somente a classificação das avaliações imutáveis.
 - O ranking pode estar incompleto enquanto existirem avaliações pendentes e não representa resultado publicado da seleção.
 - Sem avaliação elegível, retornar lista vazia (inclusive para UUID de vaga desconhecida localmente); o endpoint não consulta Vagas para provar existência.
 - Não armazenar snapshots profissionais completos no cache: a resposta contém posição, IDs, matrícula, pontos e data de inscrição.
@@ -38,6 +39,8 @@ O CORE exige um cache com estratégia e invalidação explícitas. A avaliação
 
 1. Consulta e endpoint de ranking, índice e testes de ordenação/filtragem.
 2. Configuração Redis/Caffeine, cache-aside com chave por revisão e invalidação lógica.
-3. Testes de TTL, concorrência, rollback/fallback e verificação com Redis local.
+3. Testes de TTL, concorrência, rollback/fallback e serialização aprovados; verificação com Redis 7.4.11 local confirmou preenchimento, hit, revisões, expiração e fallback.
+
+O TTL padrão é 60 segundos, aplicado desde a escrita. Leituras não renovam o TTL. Na verificação real foi usada uma instância com TTL de 5 segundos apenas para observar a expiração rapidamente; o padrão da aplicação permanece 60. A suíte completa passou com 43 testes, sem Docker.
 
 Resultado e limites em [cache-ranking.md](../evidencias/cache-ranking.md).
