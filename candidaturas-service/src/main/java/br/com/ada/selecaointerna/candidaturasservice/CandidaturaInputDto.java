@@ -1,11 +1,6 @@
 package br.com.ada.selecaointerna.candidaturasservice;
 
-import lombok.Data;
+import jakarta.validation.constraints.*;
 
-@Data
-public class CandidaturaInputDto {
-
-  private Long matriculaEmpregado;
-  private Long idVaga;
-
-}
+public record CandidaturaInputDto(@NotNull @Positive Long matriculaEmpregado,
+                                  @NotNull @Positive Long idVaga) {}

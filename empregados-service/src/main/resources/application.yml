@@ -1,3 +1,15 @@
+server:
+  port: ${SERVER_PORT:8081}
 spring:
   application:
-    name: empregadosservice
+    name: empregados-service
+  datasource:
+    url: ${EMPREGADOS_DB_URL:jdbc:postgresql://localhost:5432/empregados}
+    username: ${EMPREGADOS_DB_USER:empregados_svc}
+    password: ${EMPREGADOS_DB_PASSWORD:empregados-local}
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate
+  flyway:
+    enabled: true

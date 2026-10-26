@@ -5,6 +5,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.UUID;
+import jakarta.validation.Valid;
+import br.com.ada.selecaointerna.contracts.CriteriosVagaDto;
 
 @RestController
 @RequestMapping("/api/v1/vagas")
@@ -25,14 +28,30 @@ public class VagasController {
   }
 
   @PostMapping
-  public ResponseEntity<VagaOutputDto> cadastrarVaga(@RequestBody VagaInputDto vagaInputDto) {
+  public ResponseEntity<VagaOutputDto> cadastrarVaga(@Valid @RequestBody VagaInputDto vagaInputDto) {
     return ResponseEntity.status(201).body(service.cadastrarVaga(vagaInputDto));
   }
 
   @DeleteMapping("/{idVaga}")
-  public ResponseEntity<Void> removerVaga(@RequestParam("idVaga") Long idVaga) {
+  public ResponseEntity<Void> removerVaga(@PathVariable("idVaga") Long idVaga) {
     service.removerVaga(idVaga);
     return ResponseEntity.status(204).build();
   }
+
+  @GetMapping("/{id}/criterios")
+  public CriteriosVagaDto obterCriterios(@PathVariable UUID id) {
+    return service.obterCriterios(id);
+  }
+
+  @PostMapping("/{id}/encerramento")
+  public VagaOutputDto encerrarInscricoes(@PathVariable UUID id) { return service.encerrarInscricoes(id); }
+
+  @PostMapping("/{id}/resultado")
+  public ResponseEntity<VagaOutputDto> publicarResultado(@PathVariable UUID id) {
+    return ResponseEntity.accepted().body(service.publicarResultado(id));
+  }
+
+  @PostMapping("/{id}/conclusao")
+  public VagaOutputDto concluir(@PathVariable UUID id) { return service.concluir(id); }
 
 }

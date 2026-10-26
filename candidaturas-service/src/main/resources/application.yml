@@ -1,0 +1,58 @@
+server:
+  port: ${SERVER_PORT:8083}
+spring:
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD:}
+      connect-timeout: 300ms
+      timeout: 300ms
+      repositories:
+        enabled: false
+  application:
+    name: candidaturas-service
+  datasource:
+    url: ${CANDIDATURAS_DB_URL:jdbc:postgresql://localhost:5432/candidaturas}
+    username: ${CANDIDATURAS_DB_USER:candidaturas_svc}
+    password: ${CANDIDATURAS_DB_PASSWORD:candidaturas-local}
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate
+  flyway:
+    enabled: true
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.apache.kafka.common.serialization.StringSerializer
+      acks: all
+      properties:
+        enable.idempotence: true
+        delivery.timeout.ms: 10000
+        request.timeout.ms: 3000
+        max.block.ms: 5000
+    consumer:
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      enable-auto-commit: false
+      auto-offset-reset: earliest
+    listener:
+      ack-mode: record
+integracoes:
+  empregados-url: ${EMPREGADOS_SERVICE_URL:http://localhost:8081}
+  vagas-url: ${VAGAS_SERVICE_URL:http://localhost:8082}
+  timeout-ms: ${INTEGRACOES_TIMEOUT_MS:2000}
+mensageria:
+  enabled: ${MENSAGERIA_ENABLED:true}
+  grupo-avaliacao: ${AVALIACAO_CONSUMER_GROUP:avaliacao-curricular}
+  grupo-resultados: ${RESULTADO_CONSUMER_GROUP:resultados-publicados}
+  retry:
+    intervalo-ms: ${AVALIACAO_RETRY_INTERVALO_MS:1000}
+  outbox:
+    intervalo-ms: ${OUTBOX_INTERVALO_MS:1000}
+ranking:
+  cache:
+    tipo: ${RANKING_CACHE_TIPO:redis}
+    ttl-segundos: ${RANKING_CACHE_TTL_SEGUNDOS:60}

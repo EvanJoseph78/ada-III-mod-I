@@ -1,0 +1,203 @@
+# Endpoints dos tres microsservicos — VS Code + extensao REST Client (humao.rest-client).
+# Usar "Send Request" acima de cada bloco. As aplicacoes devem estar iniciadas.
+# Sintaxe de variaveis: https://github.com/Huachao/vscode-restclient#variables
+#
+# Fluxo sugerido:
+# 1. cadastrarAna e cadastrarBia; depois criarVaga.
+# 2. candidatarAna e candidatarBia; consultar ate status AVALIADA.
+# 3. consultarRanking (repetir para exercitar cache).
+# 4. encerrarInscricoes; consultarProntidao (apto=true); publicarResultado.
+# 5. consultarResultadoDefinitivo (repetir se 404 ate o consumo); concluirVaga.
+#
+# IDs/matriculas sao capturados das respostas nomeadas. Executar os cadastros antes
+# de usar as consultas: referencias sem resposta nao sao resolvidas pela extensao.
+# Matriculas aleatorias servem para novos ensaios; se houver colisao/409, reenviar cadastro.
+# Depois de fechar/publicar/concluir, criar outra vaga e novas candidaturas para repetir.
+
+@empregadosUrl = http://localhost:8081
+@vagasUrl = http://localhost:8082
+@candidaturasUrl = http://localhost:8083
+
+@matriculaAna = {{cadastrarAna.response.body.$.matriculaEmpregado}}
+@matriculaBia = {{cadastrarBia.response.body.$.matriculaEmpregado}}
+@empregadoId = {{cadastrarAna.response.body.$.empregadoId}}
+@idVaga = {{criarVaga.response.body.$.idVaga}}
+@vagaId = {{criarVaga.response.body.$.vagaId}}
+@candidaturaId = {{candidatarAna.response.body.$.candidaturaId}}
+@candidaturaBiaId = {{candidatarBia.response.body.$.candidaturaId}}
+
+### EMPREGADOS — cadastrar Ana (201). Java = 10 pontos na vaga deste arquivo.
+# @name cadastrarAna
+POST {{empregadosUrl}}/api/v1/empregados
+Content-Type: application/json
+
+{
+  "matriculaEmpregado": {{$randomInt 1000000000 1500000000}},
+  "nomeEmpregado": "Ana Demo",
+  "itens": [
+    { "tipo": "CURSO", "descricao": "Java", "horas": 40 },
+    { "tipo": "EXPERIENCIA_INTERNA", "descricao": "Desenvolvimento de sistemas", "meses": 12 }
+  ]
+}
+
+### EMPREGADOS — cadastrar Bia (201). Java + Spring = 30 pontos.
+# @name cadastrarBia
+POST {{empregadosUrl}}/api/v1/empregados
+Content-Type: application/json
+
+{
+  "matriculaEmpregado": {{$randomInt 1500000000 2000000000}},
+  "nomeEmpregado": "Bia Demo",
+  "itens": [
+    { "tipo": "CURSO", "descricao": "Java", "horas": 40 },
+    { "tipo": "CURSO", "descricao": "Spring", "horas": 40 }
+  ]
+}
+
+### EMPREGADOS — listar (200)
+# @name listarEmpregados
+GET {{empregadosUrl}}/api/v1/empregados
+Accept: application/json
+
+### EMPREGADOS — consultar pela matricula numerica (200; 404 se inexistente)
+# @name consultarEmpregado
+GET {{empregadosUrl}}/api/v1/empregados/{{matriculaAna}}
+Accept: application/json
+
+### EMPREGADOS — perfil completo pelo UUID (200)
+# @name consultarPerfil
+GET {{empregadosUrl}}/api/v1/empregados/{{empregadoId}}/perfil
+Accept: application/json
+
+### EMPREGADOS — curriculo profissional pela matricula: experiencias (200)
+# @name consultarCurriculoProfissional
+GET {{empregadosUrl}}/api/v1/empregados/{{matriculaAna}}/curriculo-profissional
+Accept: application/json
+
+### EMPREGADOS — curriculo educacional pela matricula: cursos/diplomas/certificacoes (200)
+# @name consultarCurriculoEducacional
+GET {{empregadosUrl}}/api/v1/empregados/{{matriculaAna}}/curriculo-educacional
+Accept: application/json
+
+### VAGAS — cadastrar vaga ABERTA (201)
+# @name criarVaga
+POST {{vagasUrl}}/api/v1/vagas
+Content-Type: application/json
+
+{
+  "nomeVaga": "Selecao Java Demo",
+  "requisitos": [
+    { "tipo": "CURSO", "palavraChave": "Java", "obrigatorio": true, "pontos": 10 },
+    { "tipo": "CURSO", "palavraChave": "Spring", "obrigatorio": false, "pontos": 20 }
+  ]
+}
+
+### VAGAS — listar (200)
+# @name listarVagas
+GET {{vagasUrl}}/api/v1/vagas
+Accept: application/json
+
+### VAGAS — consultar pelo ID numerico (200; 404 se inexistente)
+# @name consultarVaga
+GET {{vagasUrl}}/api/v1/vagas/{{idVaga}}
+Accept: application/json
+
+### VAGAS — criterios pelo UUID (200)
+# @name consultarCriterios
+GET {{vagasUrl}}/api/v1/vagas/{{vagaId}}/criterios
+Accept: application/json
+
+### CANDIDATURAS — inscrever Ana (201). Repetir a mesma inscricao retorna 409.
+# Body usa matricula e ID NUMERICOS, nao UUIDs.
+# @name candidatarAna
+POST {{candidaturasUrl}}/api/v1/candidaturas
+Content-Type: application/json
+
+{
+  "matriculaEmpregado": {{matriculaAna}},
+  "idVaga": {{idVaga}}
+}
+
+### CANDIDATURAS — consultar Ana pelo UUID da candidatura (200)
+# Repetir ate AVALIADA; pontuacao esperada 10. PENDENTE e normal antes do consumo Kafka.
+# @name consultarCandidatura
+GET {{candidaturasUrl}}/api/v1/candidaturas/{{candidaturaId}}
+Accept: application/json
+
+### CANDIDATURAS — inscrever Bia (201)
+# @name candidatarBia
+POST {{candidaturasUrl}}/api/v1/candidaturas
+Content-Type: application/json
+
+{
+  "matriculaEmpregado": {{matriculaBia}},
+  "idVaga": {{idVaga}}
+}
+
+### CANDIDATURAS — consultar Bia (200); aguardar AVALIADA, 30 pontos
+# @name consultarCandidaturaBia
+GET {{candidaturasUrl}}/api/v1/candidaturas/{{candidaturaBiaId}}
+Accept: application/json
+
+### CANDIDATURAS — ranking parcial por UUID da vaga (200)
+# Depois das duas avaliacoes: Bia 30, Ana 10. Cache-aside Redis, TTL padrao 60 s.
+# Repetir o GET para exercitar cache. Este ranking nao e o resultado oficial publicado.
+# @name consultarRanking
+GET {{candidaturasUrl}}/api/v1/candidaturas/ranking/{{vagaId}}
+Accept: application/json
+
+### VAGAS — fechar inscricoes: ABERTA -> EM_AVALIACAO (200)
+# Executar depois de inscrever os candidatos desejados. Repetivel em EM_AVALIACAO.
+# @name encerrarInscricoes
+POST {{vagasUrl}}/api/v1/vagas/{{vagaId}}/encerramento
+Accept: application/json
+
+### CANDIDATURAS — prontidao do processo fechado (200; 404 antes do fechamento)
+# Publicar somente com apto=true e todas as inscricoes avaliadas.
+# @name consultarProntidao
+GET {{candidaturasUrl}}/api/v1/candidaturas/processos/{{vagaId}}/prontidao
+Accept: application/json
+
+### VAGAS — publicar resultado (202, intencao duravel em outbox)
+# 409 se vaga nao estiver EM_AVALIACAO, houver pendencias ou ja tiver sido publicado.
+# @name publicarResultado
+POST {{vagasUrl}}/api/v1/vagas/{{vagaId}}/resultado
+Accept: application/json
+
+### CANDIDATURAS — resultado definitivo (200; 404 ate consumo/sem resultado local)
+# Repetir se necessario. Retorna publicacao original, ranking persistido e contagens.
+# @name consultarResultadoDefinitivo
+GET {{candidaturasUrl}}/api/v1/candidaturas/resultados/{{vagaId}}
+Accept: application/json
+
+### VAGAS — concluir: RESULTADO_PUBLICADO -> CONCLUIDA (200)
+# Para demonstrar, consultar o definitivo antes. Conclusao administrativa nao e ACK remoto.
+# @name concluirVaga
+POST {{vagasUrl}}/api/v1/vagas/{{vagaId}}/conclusao
+Accept: application/json
+
+### CANDIDATURAS — coordenacao interna: fechar barreira diretamente (200)
+# No fluxo normal usar encerrarInscricoes de Vagas. Este bloco documenta a rota interna.
+# Executar, se desejado, apos o fechamento normal para observar a repeticao idempotente.
+# @name encerrarBarreiraInterna
+POST {{candidaturasUrl}}/api/v1/candidaturas/processos/{{vagaId}}/encerramento
+Content-Type: application/json
+
+{
+  "idVaga": {{idVaga}}
+}
+
+### VAGAS — criar uma vaga separada para demonstrar exclusao (201)
+# @name criarVagaDescartavel
+POST {{vagasUrl}}/api/v1/vagas
+Content-Type: application/json
+
+{
+  "nomeVaga": "Vaga descartavel sem inscricoes",
+  "requisitos": []
+}
+
+### VAGAS — excluir somente a vaga descartavel, ainda ABERTA (204)
+# Vagas fora de ABERTA retornam 409. Este bloco nao exclui a vaga principal do ensaio.
+# @name excluirVagaDescartavel
+DELETE {{vagasUrl}}/api/v1/vagas/{{criarVagaDescartavel.response.body.$.idVaga}}

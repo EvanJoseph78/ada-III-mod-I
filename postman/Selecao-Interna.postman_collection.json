@@ -1,0 +1,1168 @@
+{
+    "info":  {
+                 "description":  "Colecao com os 24 exemplos de requisicoes.http, organizada por microsservico.\n\nUso manual: importar, iniciar as tres aplicacoes/infraestrutura e enviar as requisicoes nesta ordem:\n1. Empregados: cadastrarAna, cadastrarBia.\n2. Vagas: criarVaga.\n3. Candidaturas: candidatarAna, consultarCandidatura ate AVALIADA; candidatarBia, consultarCandidaturaBia ate AVALIADA; consultarRanking (Bia 30, Ana 10).\n4. Vagas: encerrarInscricoes. Candidaturas: consultarProntidao (apto=true).\n5. Vagas: publicarResultado (202). Candidaturas: consultarResultadoDefinitivo ate 200. Vagas: concluirVaga.\n\nIDs e matriculas sao capturados automaticamente em variaveis da colecao; URLs locais podem ser alteradas na aba Variables. Nao e preciso importar um environment. Evite variaveis de environment com os mesmos nomes, que podem prevalecer sobre as capturadas.\n\nAs pastas agrupam endpoints, nao a ordem de um Runner: nao executar a colecao inteira automaticamente. Avaliacao e publicacao sao assincronas; repetir consultas quando PENDENTE/404. Nova demonstracao exige criar outra vaga e novas candidaturas. Nao ha reabertura/segunda publicacao.\n\nencerrarBarreiraInterna documenta uma rota de coordenacao: no fluxo normal, fechar por Vagas. Exclusao usa somente a vaga descartavel criada por criarVagaDescartavel. Nao ha credenciais nem autenticacao nesta colecao.",
+                 "name":  "Selecao Interna - Microsservicos",
+                 "schema":  "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+             },
+    "variable":  [
+                     {
+                         "key":  "empregadosUrl",
+                         "type":  "string",
+                         "value":  "http://localhost:8081"
+                     },
+                     {
+                         "key":  "vagasUrl",
+                         "type":  "string",
+                         "value":  "http://localhost:8082"
+                     },
+                     {
+                         "key":  "candidaturasUrl",
+                         "type":  "string",
+                         "value":  "http://localhost:8083"
+                     },
+                     {
+                         "key":  "empregadoId",
+                         "type":  "string",
+                         "value":  ""
+                     },
+                     {
+                         "key":  "matriculaAna",
+                         "type":  "string",
+                         "value":  ""
+                     },
+                     {
+                         "key":  "matriculaBia",
+                         "type":  "string",
+                         "value":  ""
+                     },
+                     {
+                         "key":  "idVaga",
+                         "type":  "string",
+                         "value":  ""
+                     },
+                     {
+                         "key":  "vagaId",
+                         "type":  "string",
+                         "value":  ""
+                     },
+                     {
+                         "key":  "candidaturaId",
+                         "type":  "string",
+                         "value":  ""
+                     },
+                     {
+                         "key":  "candidaturaBiaId",
+                         "type":  "string",
+                         "value":  ""
+                     },
+                     {
+                         "key":  "idVagaDescartavel",
+                         "type":  "string",
+                         "value":  ""
+                     },
+                     {
+                         "key":  "resultadoEventId",
+                         "type":  "string",
+                         "value":  ""
+                     }
+                 ],
+    "item":  [
+                 {
+                     "name":  "01 - Empregados (8081)",
+                     "item":  [
+                                  {
+                                      "name":  "cadastrarAna | EMPREGADOS — cadastrar Ana (201). Java = 10 pontos na vaga deste arquivo.",
+                                      "request":  {
+                                                      "method":  "POST",
+                                                      "header":  [
+                                                                     {
+                                                                         "key":  "Accept",
+                                                                         "type":  "text",
+                                                                         "value":  "application/json"
+                                                                     },
+                                                                     {
+                                                                         "key":  "Content-Type",
+                                                                         "type":  "text",
+                                                                         "value":  "application/json"
+                                                                     }
+                                                                 ],
+                                                      "url":  "{{empregadosUrl}}/api/v1/empregados",
+                                                      "description":  "",
+                                                      "body":  {
+                                                                   "raw":  "{\n  \"matriculaEmpregado\": {{novaMatricula}},\n  \"nomeEmpregado\": \"Ana Demo\",\n  \"itens\": [\n    { \"tipo\": \"CURSO\", \"descricao\": \"Java\", \"horas\": 40 },\n    { \"tipo\": \"EXPERIENCIA_INTERNA\", \"descricao\": \"Desenvolvimento de sistemas\", \"meses\": 12 }\n  ]\n}",
+                                                                   "options":  {
+                                                                                   "raw":  {
+                                                                                               "language":  "json"
+                                                                                           }
+                                                                               },
+                                                                   "mode":  "raw"
+                                                               }
+                                                  },
+                                      "event":  [
+                                                    {
+                                                        "script":  {
+                                                                       "exec":  [
+                                                                                    "pm.collectionVariables.unset(\"matriculaAna\");",
+                                                                                    "pm.collectionVariables.unset(\"empregadoId\");",
+                                                                                    "pm.variables.set(\"novaMatricula\", String(Date.now() * 10 + 1));",
+                                                                                    "if (!pm.variables.get(\"empregadosUrl\")) throw new Error(\"Variavel empregadosUrl ausente: execute os cadastros anteriores ou preencha as variaveis da colecao.\");"
+                                                                                ],
+                                                                       "type":  "text/javascript"
+                                                                   },
+                                                        "listen":  "prerequest"
+                                                    },
+                                                    {
+                                                        "script":  {
+                                                                       "exec":  [
+                                                                                    "pm.test(\"Status esperado\", function () { pm.expect([201]).to.include(pm.response.code); });",
+                                                                                    "if (pm.response.code === 201) {",
+                                                                                    "  const dados = pm.response.json();",
+                                                                                    "  pm.test(\"Resposta contem matriculaEmpregado\", function () { pm.expect(dados).to.have.property(\"matriculaEmpregado\"); });",
+                                                                                    "  if (dados.matriculaEmpregado !== undefined \u0026\u0026 dados.matriculaEmpregado !== null) pm.collectionVariables.set(\"matriculaAna\", String(dados.matriculaEmpregado));",
+                                                                                    "  pm.test(\"Resposta contem empregadoId\", function () { pm.expect(dados).to.have.property(\"empregadoId\"); });",
+                                                                                    "  if (dados.empregadoId !== undefined \u0026\u0026 dados.empregadoId !== null) pm.collectionVariables.set(\"empregadoId\", String(dados.empregadoId));",
+                                                                                    "}"
+                                                                                ],
+                                                                       "type":  "text/javascript"
+                                                                   },
+                                                        "listen":  "test"
+                                                    }
+                                                ],
+                                      "response":  [
+
+                                                   ]
+                                  },
+                                  {
+                                      "name":  "cadastrarBia | EMPREGADOS — cadastrar Bia (201). Java + Spring = 30 pontos.",
+                                      "request":  {
+                                                      "method":  "POST",
+                                                      "header":  [
+                                                                     {
+                                                                         "key":  "Accept",
+                                                                         "type":  "text",
+                                                                         "value":  "application/json"
+                                                                     },
+                                                                     {
+                                                                         "key":  "Content-Type",
+                                                                         "type":  "text",
+                                                                         "value":  "application/json"
+                                                                     }
+                                                                 ],
+                                                      "url":  "{{empregadosUrl}}/api/v1/empregados",
+                                                      "description":  "",
+                                                      "body":  {
+                                                                   "raw":  "{\n  \"matriculaEmpregado\": {{novaMatricula}},\n  \"nomeEmpregado\": \"Bia Demo\",\n  \"itens\": [\n    { \"tipo\": \"CURSO\", \"descricao\": \"Java\", \"horas\": 40 },\n    { \"tipo\": \"CURSO\", \"descricao\": \"Spring\", \"horas\": 40 }\n  ]\n}",
+                                                                   "options":  {
+                                                                                   "raw":  {
+                                                                                               "language":  "json"
+                                                                                           }
+                                                                               },
+                                                                   "mode":  "raw"
+                                                               }
+                                                  },
+                                      "event":  [
+                                                    {
+                                                        "script":  {
+                                                                       "exec":  [
+                                                                                    "pm.collectionVariables.unset(\"matriculaBia\");",
+                                                                                    "pm.variables.set(\"novaMatricula\", String(Date.now() * 10 + 2));",
+                                                                                    "if (!pm.variables.get(\"empregadosUrl\")) throw new Error(\"Variavel empregadosUrl ausente: execute os cadastros anteriores ou preencha as variaveis da colecao.\");"
+                                                                                ],
+                                                                       "type":  "text/javascript"
+                                                                   },
+                                                        "listen":  "prerequest"
+                                                    },
+                                                    {
+                                                        "script":  {
+                                                                       "exec":  [
+                                                                                    "pm.test(\"Status esperado\", function () { pm.expect([201]).to.include(pm.response.code); });",
+                                                                                    "if (pm.response.code === 201) {",
+                                                                                    "  const dados = pm.response.json();",
+                                                                                    "  pm.test(\"Resposta contem matriculaEmpregado\", function () { pm.expect(dados).to.have.property(\"matriculaEmpregado\"); });",
+                                                                                    "  if (dados.matriculaEmpregado !== undefined \u0026\u0026 dados.matriculaEmpregado !== null) pm.collectionVariables.set(\"matriculaBia\", String(dados.matriculaEmpregado));",
+                                                                                    "}"
+                                                                                ],
+                                                                       "type":  "text/javascript"
+                                                                   },
+                                                        "listen":  "test"
+                                                    }
+                                                ],
+                                      "response":  [
+
+                                                   ]
+                                  },
+                                  {
+                                      "name":  "listarEmpregados | EMPREGADOS — listar (200)",
+                                      "request":  {
+                                                      "method":  "GET",
+                                                      "header":  [
+                                                                     {
+                                                                         "key":  "Accept",
+                                                                         "type":  "text",
+                                                                         "value":  "application/json"
+                                                                     }
+                                                                 ],
+                                                      "url":  "{{empregadosUrl}}/api/v1/empregados",
+                                                      "description":  ""
+                                                  },
+                                      "event":  [
+                                                    {
+                                                        "script":  {
+                                                                       "exec":  [
+                                                                                    "if (!pm.variables.get(\"empregadosUrl\")) throw new Error(\"Variavel empregadosUrl ausente: execute os cadastros anteriores ou preencha as variaveis da colecao.\");"
+                                                                                ],
+                                                                       "type":  "text/javascript"
+                                                                   },
+                                                        "listen":  "prerequest"
+                                                    },
+                                                    {
+                                                        "script":  {
+                                                                       "exec":  [
+                                                                                    "pm.test(\"Status esperado\", function () { pm.expect([200]).to.include(pm.response.code); });"
+                                                                                ],
+                                                                       "type":  "text/javascript"
+                                                                   },
+                                                        "listen":  "test"
+                                                    }
+                                                ],
+                                      "response":  [
+
+                                                   ]
+                                  },
+                                  {
+                                      "name":  "consultarEmpregado | EMPREGADOS — consultar pela matricula numerica (200; 404 se inexistente)",
+                                      "request":  {
+                                                      "method":  "GET",
+                                                      "header":  [
+                                                                     {
+                                                                         "key":  "Accept",
+                                                                         "type":  "text",
+                                                                         "value":  "application/json"
+                                                                     }
+                                                                 ],
+                                                      "url":  "{{empregadosUrl}}/api/v1/empregados/{{matriculaAna}}",
+                                                      "description":  ""
+                                                  },
+                                      "event":  [
+                                                    {
+                                                        "script":  {
+                                                                       "exec":  [
+                                                                                    "if (!pm.variables.get(\"empregadosUrl\")) throw new Error(\"Variavel empregadosUrl ausente: execute os cadastros anteriores ou preencha as variaveis da colecao.\");",
+                                                                                    "if (!pm.variables.get(\"matriculaAna\")) throw new Error(\"Variavel matriculaAna ausente: execute os cadastros anteriores ou preencha as variaveis da colecao.\");"
+                                                                                ],
+                                                                       "type":  "text/javascript"
+                                                                   },
+                                                        "listen":  "prerequest"
+                                                    },
+                                                    {
+                                                        "script":  {
+                                                                       "exec":  [
+                                                                                    "pm.test(\"Status esperado\", function () { pm.expect([200]).to.include(pm.response.code); });"
+                                                                                ],
+                                                                       "type":  "text/javascript"
+                                                                   },
+                                                        "listen":  "test"
+                                                    }
+                                                ],
+                                      "response":  [
+
+                                                   ]
+                                  },
+                                  {
+                                      "name":  "consultarPerfil | EMPREGADOS — perfil completo pelo UUID (200)",
+                                      "request":  {
+                                                      "method":  "GET",
+                                                      "header":  [
+                                                                     {
+                                                                         "key":  "Accept",
+                                                                         "type":  "text",
+                                                                         "value":  "application/json"
+                                                                     }
+                                                                 ],
+                                                      "url":  "{{empregadosUrl}}/api/v1/empregados/{{empregadoId}}/perfil",
+                                                      "description":  ""
+                                                  },
+                                      "event":  [
+                                                    {
+                                                        "script":  {
+                                                                       "exec":  [
+                                                                                    "if (!pm.variables.get(\"empregadosUrl\")) throw new Error(\"Variavel empregadosUrl ausente: execute os cadastros anteriores ou preencha as variaveis da colecao.\");",
+                                                                                    "if (!pm.variables.get(\"empregadoId\")) throw new Error(\"Variavel empregadoId ausente: execute os cadastros anteriores ou preencha as variaveis da colecao.\");"
+                                                                                ],
+                                                                       "type":  "text/javascript"
+                                                                   },
+                                                        "listen":  "prerequest"
+                                                    },
+                                                    {
+                                                        "script":  {
+                                                                       "exec":  [
+                                                                                    "pm.test(\"Status esperado\", function () { pm.expect([200]).to.include(pm.response.code); });"
+                                                                                ],
+                                                                       "type":  "text/javascript"
+                                                                   },
+                                                        "listen":  "test"
+                                                    }
+                                                ],
+                                      "response":  [
+
+                                                   ]
+                                  },
+                                  {
+                                      "name":  "consultarCurriculoProfissional | EMPREGADOS — curriculo profissional pela matricula: experiencias (200)",
+                                      "request":  {
+                                                      "method":  "GET",
+                                                      "header":  [
+                                                                     {
+                                                                         "key":  "Accept",
+                                                                         "type":  "text",
+                                                                         "value":  "application/json"
+                                                                     }
+                                                                 ],
+                                                      "url":  "{{empregadosUrl}}/api/v1/empregados/{{matriculaAna}}/curriculo-profissional",
+                                                      "description":  ""
+                                                  },
+                                      "event":  [
+                                                    {
+                                                        "script":  {
+                                                                       "exec":  [
+                                                                                    "if (!pm.variables.get(\"empregadosUrl\")) throw new Error(\"Variavel empregadosUrl ausente: execute os cadastros anteriores ou preencha as variaveis da colecao.\");",
+                                                                                    "if (!pm.variables.get(\"matriculaAna\")) throw new Error(\"Variavel matriculaAna ausente: execute os cadastros anteriores ou preencha as variaveis da colecao.\");"
+                                                                                ],
+                                                                       "type":  "text/javascript"
+                                                                   },
+                                                        "listen":  "prerequest"
+                                                    },
+                                                    {
+                                                        "script":  {
+                                                                       "exec":  [
+                                                                                    "pm.test(\"Status esperado\", function () { pm.expect([200]).to.include(pm.response.code); });"
+                                                                                ],
+                                                                       "type":  "text/javascript"
+                                                                   },
+                                                        "listen":  "test"
+                                                    }
+                                                ],
+                                      "response":  [
+
+                                                   ]
+                                  },
+                                  {
+                                      "name":  "consultarCurriculoEducacional | EMPREGADOS — curriculo educacional pela matricula: cursos/diplomas/certificacoes (200)",
+                                      "request":  {
+                                                      "method":  "GET",
+                                                      "header":  [
+                                                                     {
+                                                                         "key":  "Accept",
+                                                                         "type":  "text",
+                                                                         "value":  "application/json"
+                                                                     }
+                                                                 ],
+                                                      "url":  "{{empregadosUrl}}/api/v1/empregados/{{matriculaAna}}/curriculo-educacional",
+                                                      "description":  ""
+                                                  },
+                                      "event":  [
+                                                    {
+                                                        "script":  {
+                                                                       "exec":  [
+                                                                                    "if (!pm.variables.get(\"empregadosUrl\")) throw new Error(\"Variavel empregadosUrl ausente: execute os cadastros anteriores ou preencha as variaveis da colecao.\");",
+                                                                                    "if (!pm.variables.get(\"matriculaAna\")) throw new Error(\"Variavel matriculaAna ausente: execute os cadastros anteriores ou preencha as variaveis da colecao.\");"
+                                                                                ],
+                                                                       "type":  "text/javascript"
+                                                                   },
+                                                        "listen":  "prerequest"
+                                                    },
+                                                    {
+                                                        "script":  {
+                                                                       "exec":  [
+                                                                                    "pm.test(\"Status esperado\", function () { pm.expect([200]).to.include(pm.response.code); });"
+                                                                                ],
+                                                                       "type":  "text/javascript"
+                                                                   },
+                                                        "listen":  "test"
+                                                    }
+                                                ],
+                                      "response":  [
+
+                                                   ]
+                                  }
+                              ]
+                 },
+                 {
+                     "name":  "02 - Vagas (8082)",
+                     "item":  [
+                                  {
+                                      "name":  "criarVaga | VAGAS — cadastrar vaga ABERTA (201)",
+                                      "request":  {
+                                                      "method":  "POST",
+                                                      "header":  [
+                                                                     {
+                                                                         "key":  "Accept",
+                                                                         "type":  "text",
+                                                                         "value":  "application/json"
+                                                                     },
+                                                                     {
+                                                                         "key":  "Content-Type",
+                                                                         "type":  "text",
+                                                                         "value":  "application/json"
+                                                                     }
+                                                                 ],
+                                                      "url":  "{{vagasUrl}}/api/v1/vagas",
+                                                      "description":  "",
+                                                      "body":  {
+                                                                   "raw":  "{\n  \"nomeVaga\": \"Selecao Java Demo\",\n  \"requisitos\": [\n    { \"tipo\": \"CURSO\", \"palavraChave\": \"Java\", \"obrigatorio\": true, \"pontos\": 10 },\n    { \"tipo\": \"CURSO\", \"palavraChave\": \"Spring\", \"obrigatorio\": false, \"pontos\": 20 }\n  ]\n}",
+                                                                   "options":  {
+                                                                                   "raw":  {
+                                                                                               "language":  "json"
+                                                                                           }
+                                                                               },
+                                                                   "mode":  "raw"
+                                                               }
+                                                  },
+                                      "event":  [
+                                                    {
+                                                        "script":  {
+                                                                       "exec":  [
+                                                                                    "pm.collectionVariables.unset(\"vagaId\");",
+                                                                                    "pm.collectionVariables.unset(\"idVaga\");",
+                                                                                    "pm.collectionVariables.unset(\"candidaturaId\");",
+                                                                                    "pm.collectionVariables.unset(\"candidaturaBiaId\");",
+                                                                                    "pm.collectionVariables.unset(\"resultadoEventId\");",
+                                                                                    "if (!pm.variables.get(\"vagasUrl\")) throw new Error(\"Variavel vagasUrl ausente: execute os cadastros anteriores ou preencha as variaveis da colecao.\");"
+                                                                                ],
+                                                                       "type":  "text/javascript"
+                                                                   },
+                                                        "listen":  "prerequest"
+                                                    },
+                                                    {
+                                                        "script":  {
+                                                                       "exec":  [
+                                                                                    "pm.test(\"Status esperado\", function () { pm.expect([201]).to.include(pm.response.code); });",
+                                                                                    "if (pm.response.code === 201) {",
+                                                                                    "  const dados = pm.response.json();",
+                                                                                    "  pm.test(\"Resposta contem vagaId\", function () { pm.expect(dados).to.have.property(\"vagaId\"); });",
+                                                                                    "  if (dados.vagaId !== undefined \u0026\u0026 dados.vagaId !== null) pm.collectionVariables.set(\"vagaId\", String(dados.vagaId));",
+                                                                                    "  pm.test(\"Resposta contem idVaga\", function () { pm.expect(dados).to.have.property(\"idVaga\"); });",
+                                                                                    "  if (dados.idVaga !== undefined \u0026\u0026 dados.idVaga !== null) pm.collectionVariables.set(\"idVaga\", String(dados.idVaga));",
+                                                                                    "}"
+                                                                                ],
+                                                                       "type":  "text/javascript"
+                                                                   },
+                                                        "listen":  "test"
+                                                    }
+                                                ],
+                                      "response":  [
+
+                                                   ]
+                                  },
+                                  {
+                                      "name":  "listarVagas | VAGAS — listar (200)",
+                                      "request":  {
+                                                      "method":  "GET",
+                                                      "header":  [
+                                                                     {
+                                                                         "key":  "Accept",
+                                                                         "type":  "text",
+                                                                         "value":  "application/json"
+                                                                     }
+                                                                 ],
+                                                      "url":  "{{vagasUrl}}/api/v1/vagas",
+                                                      "description":  ""
+                                                  },
+                                      "event":  [
+                                                    {
+                                                        "script":  {
+                                                                       "exec":  [
+                                                                                    "if (!pm.variables.get(\"vagasUrl\")) throw new Error(\"Variavel vagasUrl ausente: execute os cadastros anteriores ou preencha as variaveis da colecao.\");"
+                                                                                ],
+                                                                       "type":  "text/javascript"
+                                                                   },
+                                                        "listen":  "prerequest"
+                                                    },
+                                                    {
+                                                        "script":  {
+                                                                       "exec":  [
+                                                                                    "pm.test(\"Status esperado\", function () { pm.expect([200]).to.include(pm.response.code); });"
+                                                                                ],
+                                                                       "type":  "text/javascript"
+                                                                   },
+                                                        "listen":  "test"
+                                                    }
+                                                ],
+                                      "response":  [
+
+                                                   ]
+                                  },
+                                  {
+                                      "name":  "consultarVaga | VAGAS — consultar pelo ID numerico (200; 404 se inexistente)",
+                                      "request":  {
+                                                      "method":  "GET",
+                                                      "header":  [
+                                                                     {
+                                                                         "key":  "Accept",
+                                                                         "type":  "text",
+                                                                         "value":  "application/json"
+                                                                     }
+                                                                 ],
+                                                      "url":  "{{vagasUrl}}/api/v1/vagas/{{idVaga}}",
+                                                      "description":  ""
+                                                  },
+                                      "event":  [
+                                                    {
+                                                        "script":  {
+                                                                       "exec":  [
+                                                                                    "if (!pm.variables.get(\"vagasUrl\")) throw new Error(\"Variavel vagasUrl ausente: execute os cadastros anteriores ou preencha as variaveis da colecao.\");",
+                                                                                    "if (!pm.variables.get(\"idVaga\")) throw new Error(\"Variavel idVaga ausente: execute os cadastros anteriores ou preencha as variaveis da colecao.\");"
+                                                                                ],
+                                                                       "type":  "text/javascript"
+                                                                   },
+                                                        "listen":  "prerequest"
+                                                    },
+                                                    {
+                                                        "script":  {
+                                                                       "exec":  [
+                                                                                    "pm.test(\"Status esperado\", function () { pm.expect([200]).to.include(pm.response.code); });"
+                                                                                ],
+                                                                       "type":  "text/javascript"
+                                                                   },
+                                                        "listen":  "test"
+                                                    }
+                                                ],
+                                      "response":  [
+
+                                                   ]
+                                  },
+                                  {
+                                      "name":  "consultarCriterios | VAGAS — criterios pelo UUID (200)",
+                                      "request":  {
+                                                      "method":  "GET",
+                                                      "header":  [
+                                                                     {
+                                                                         "key":  "Accept",
+                                                                         "type":  "text",
+                                                                         "value":  "application/json"
+                                                                     }
+                                                                 ],
+                                                      "url":  "{{vagasUrl}}/api/v1/vagas/{{vagaId}}/criterios",
+                                                      "description":  ""
+                                                  },
+                                      "event":  [
+                                                    {
+                                                        "script":  {
+                                                                       "exec":  [
+                                                                                    "if (!pm.variables.get(\"vagasUrl\")) throw new Error(\"Variavel vagasUrl ausente: execute os cadastros anteriores ou preencha as variaveis da colecao.\");",
+                                                                                    "if (!pm.variables.get(\"vagaId\")) throw new Error(\"Variavel vagaId ausente: execute os cadastros anteriores ou preencha as variaveis da colecao.\");"
+                                                                                ],
+                                                                       "type":  "text/javascript"
+                                                                   },
+                                                        "listen":  "prerequest"
+                                                    },
+                                                    {
+                                                        "script":  {
+                                                                       "exec":  [
+                                                                                    "pm.test(\"Status esperado\", function () { pm.expect([200]).to.include(pm.response.code); });"
+                                                                                ],
+                                                                       "type":  "text/javascript"
+                                                                   },
+                                                        "listen":  "test"
+                                                    }
+                                                ],
+                                      "response":  [
+
+                                                   ]
+                                  },
+                                  {
+                                      "name":  "encerrarInscricoes | VAGAS — fechar inscricoes: ABERTA -\u003e EM_AVALIACAO (200)",
+                                      "request":  {
+                                                      "method":  "POST",
+                                                      "header":  [
+                                                                     {
+                                                                         "key":  "Accept",
+                                                                         "type":  "text",
+                                                                         "value":  "application/json"
+                                                                     }
+                                                                 ],
+                                                      "url":  "{{vagasUrl}}/api/v1/vagas/{{vagaId}}/encerramento",
+                                                      "description":  "Executar depois de inscrever os candidatos desejados. Repetivel em EM_AVALIACAO."
+                                                  },
+                                      "event":  [
+                                                    {
+                                                        "script":  {
+                                                                       "exec":  [
+                                                                                    "if (!pm.variables.get(\"vagasUrl\")) throw new Error(\"Variavel vagasUrl ausente: execute os cadastros anteriores ou preencha as variaveis da colecao.\");",
+                                                                                    "if (!pm.variables.get(\"vagaId\")) throw new Error(\"Variavel vagaId ausente: execute os cadastros anteriores ou preencha as variaveis da colecao.\");"
+                                                                                ],
+                                                                       "type":  "text/javascript"
+                                                                   },
+                                                        "listen":  "prerequest"
+                                                    },
+                                                    {
+                                                        "script":  {
+                                                                       "exec":  [
+                                                                                    "pm.test(\"Status esperado\", function () { pm.expect([200]).to.include(pm.response.code); });"
+                                                                                ],
+                                                                       "type":  "text/javascript"
+                                                                   },
+                                                        "listen":  "test"
+                                                    }
+                                                ],
+                                      "response":  [
+
+                                                   ]
+                                  },
+                                  {
+                                      "name":  "publicarResultado | VAGAS — publicar resultado (202, intencao duravel em outbox)",
+                                      "request":  {
+                                                      "method":  "POST",
+                                                      "header":  [
+                                                                     {
+                                                                         "key":  "Accept",
+                                                                         "type":  "text",
+                                                                         "value":  "application/json"
+                                                                     }
+                                                                 ],
+                                                      "url":  "{{vagasUrl}}/api/v1/vagas/{{vagaId}}/resultado",
+                                                      "description":  "409 se vaga nao estiver EM_AVALIACAO, houver pendencias ou ja tiver sido publicado."
+                                                  },
+                                      "event":  [
+                                                    {
+                                                        "script":  {
+                                                                       "exec":  [
+                                                                                    "if (!pm.variables.get(\"vagasUrl\")) throw new Error(\"Variavel vagasUrl ausente: execute os cadastros anteriores ou preencha as variaveis da colecao.\");",
+                                                                                    "if (!pm.variables.get(\"vagaId\")) throw new Error(\"Variavel vagaId ausente: execute os cadastros anteriores ou preencha as variaveis da colecao.\");"
+                                                                                ],
+                                                                       "type":  "text/javascript"
+                                                                   },
+                                                        "listen":  "prerequest"
+                                                    },
+                                                    {
+                                                        "script":  {
+                                                                       "exec":  [
+                                                                                    "pm.test(\"Status esperado\", function () { pm.expect([202]).to.include(pm.response.code); });"
+                                                                                ],
+                                                                       "type":  "text/javascript"
+                                                                   },
+                                                        "listen":  "test"
+                                                    }
+                                                ],
+                                      "response":  [
+
+                                                   ]
+                                  },
+                                  {
+                                      "name":  "concluirVaga | VAGAS — concluir: RESULTADO_PUBLICADO -\u003e CONCLUIDA (200)",
+                                      "request":  {
+                                                      "method":  "POST",
+                                                      "header":  [
+                                                                     {
+                                                                         "key":  "Accept",
+                                                                         "type":  "text",
+                                                                         "value":  "application/json"
+                                                                     }
+                                                                 ],
+                                                      "url":  "{{vagasUrl}}/api/v1/vagas/{{vagaId}}/conclusao",
+                                                      "description":  "Para demonstrar, consultar o definitivo antes. Conclusao administrativa nao e ACK remoto."
+                                                  },
+                                      "event":  [
+                                                    {
+                                                        "script":  {
+                                                                       "exec":  [
+                                                                                    "if (!pm.variables.get(\"vagasUrl\")) throw new Error(\"Variavel vagasUrl ausente: execute os cadastros anteriores ou preencha as variaveis da colecao.\");",
+                                                                                    "if (!pm.variables.get(\"vagaId\")) throw new Error(\"Variavel vagaId ausente: execute os cadastros anteriores ou preencha as variaveis da colecao.\");"
+                                                                                ],
+                                                                       "type":  "text/javascript"
+                                                                   },
+                                                        "listen":  "prerequest"
+                                                    },
+                                                    {
+                                                        "script":  {
+                                                                       "exec":  [
+                                                                                    "pm.test(\"Status esperado\", function () { pm.expect([200]).to.include(pm.response.code); });"
+                                                                                ],
+                                                                       "type":  "text/javascript"
+                                                                   },
+                                                        "listen":  "test"
+                                                    }
+                                                ],
+                                      "response":  [
+
+                                                   ]
+                                  },
+                                  {
+                                      "name":  "criarVagaDescartavel | VAGAS — criar uma vaga separada para demonstrar exclusao (201)",
+                                      "request":  {
+                                                      "method":  "POST",
+                                                      "header":  [
+                                                                     {
+                                                                         "key":  "Accept",
+                                                                         "type":  "text",
+                                                                         "value":  "application/json"
+                                                                     },
+                                                                     {
+                                                                         "key":  "Content-Type",
+                                                                         "type":  "text",
+                                                                         "value":  "application/json"
+                                                                     }
+                                                                 ],
+                                                      "url":  "{{vagasUrl}}/api/v1/vagas",
+                                                      "description":  "",
+                                                      "body":  {
+                                                                   "raw":  "{\n  \"nomeVaga\": \"Vaga descartavel sem inscricoes\",\n  \"requisitos\": []\n}",
+                                                                   "options":  {
+                                                                                   "raw":  {
+                                                                                               "language":  "json"
+                                                                                           }
+                                                                               },
+                                                                   "mode":  "raw"
+                                                               }
+                                                  },
+                                      "event":  [
+                                                    {
+                                                        "script":  {
+                                                                       "exec":  [
+                                                                                    "pm.collectionVariables.unset(\"idVagaDescartavel\");",
+                                                                                    "if (!pm.variables.get(\"vagasUrl\")) throw new Error(\"Variavel vagasUrl ausente: execute os cadastros anteriores ou preencha as variaveis da colecao.\");"
+                                                                                ],
+                                                                       "type":  "text/javascript"
+                                                                   },
+                                                        "listen":  "prerequest"
+                                                    },
+                                                    {
+                                                        "script":  {
+                                                                       "exec":  [
+                                                                                    "pm.test(\"Status esperado\", function () { pm.expect([201]).to.include(pm.response.code); });",
+                                                                                    "if (pm.response.code === 201) {",
+                                                                                    "  const dados = pm.response.json();",
+                                                                                    "  pm.test(\"Resposta contem idVaga\", function () { pm.expect(dados).to.have.property(\"idVaga\"); });",
+                                                                                    "  if (dados.idVaga !== undefined \u0026\u0026 dados.idVaga !== null) pm.collectionVariables.set(\"idVagaDescartavel\", String(dados.idVaga));",
+                                                                                    "}"
+                                                                                ],
+                                                                       "type":  "text/javascript"
+                                                                   },
+                                                        "listen":  "test"
+                                                    }
+                                                ],
+                                      "response":  [
+
+                                                   ]
+                                  },
+                                  {
+                                      "name":  "excluirVagaDescartavel | VAGAS — excluir somente a vaga descartavel, ainda ABERTA (204)",
+                                      "request":  {
+                                                      "method":  "DELETE",
+                                                      "header":  [
+                                                                     {
+                                                                         "key":  "Accept",
+                                                                         "type":  "text",
+                                                                         "value":  "application/json"
+                                                                     }
+                                                                 ],
+                                                      "url":  "{{vagasUrl}}/api/v1/vagas/{{idVagaDescartavel}}",
+                                                      "description":  "Vagas fora de ABERTA retornam 409. Este bloco nao exclui a vaga principal do ensaio."
+                                                  },
+                                      "event":  [
+                                                    {
+                                                        "script":  {
+                                                                       "exec":  [
+                                                                                    "if (!pm.variables.get(\"vagasUrl\")) throw new Error(\"Variavel vagasUrl ausente: execute os cadastros anteriores ou preencha as variaveis da colecao.\");",
+                                                                                    "if (!pm.variables.get(\"idVagaDescartavel\")) throw new Error(\"Variavel idVagaDescartavel ausente: execute os cadastros anteriores ou preencha as variaveis da colecao.\");"
+                                                                                ],
+                                                                       "type":  "text/javascript"
+                                                                   },
+                                                        "listen":  "prerequest"
+                                                    },
+                                                    {
+                                                        "script":  {
+                                                                       "exec":  [
+                                                                                    "pm.test(\"Status esperado\", function () { pm.expect([204]).to.include(pm.response.code); });"
+                                                                                ],
+                                                                       "type":  "text/javascript"
+                                                                   },
+                                                        "listen":  "test"
+                                                    }
+                                                ],
+                                      "response":  [
+
+                                                   ]
+                                  }
+                              ]
+                 },
+                 {
+                     "name":  "03 - Candidaturas (8083)",
+                     "item":  [
+                                  {
+                                      "name":  "candidatarAna | CANDIDATURAS — inscrever Ana (201). Repetir a mesma inscricao retorna 409.",
+                                      "request":  {
+                                                      "method":  "POST",
+                                                      "header":  [
+                                                                     {
+                                                                         "key":  "Accept",
+                                                                         "type":  "text",
+                                                                         "value":  "application/json"
+                                                                     },
+                                                                     {
+                                                                         "key":  "Content-Type",
+                                                                         "type":  "text",
+                                                                         "value":  "application/json"
+                                                                     }
+                                                                 ],
+                                                      "url":  "{{candidaturasUrl}}/api/v1/candidaturas",
+                                                      "description":  "Body usa matricula e ID NUMERICOS, nao UUIDs.",
+                                                      "body":  {
+                                                                   "raw":  "{\n  \"matriculaEmpregado\": {{matriculaAna}},\n  \"idVaga\": {{idVaga}}\n}",
+                                                                   "options":  {
+                                                                                   "raw":  {
+                                                                                               "language":  "json"
+                                                                                           }
+                                                                               },
+                                                                   "mode":  "raw"
+                                                               }
+                                                  },
+                                      "event":  [
+                                                    {
+                                                        "script":  {
+                                                                       "exec":  [
+                                                                                    "pm.collectionVariables.unset(\"candidaturaId\");",
+                                                                                    "if (!pm.variables.get(\"candidaturasUrl\")) throw new Error(\"Variavel candidaturasUrl ausente: execute os cadastros anteriores ou preencha as variaveis da colecao.\");",
+                                                                                    "if (!pm.variables.get(\"matriculaAna\")) throw new Error(\"Variavel matriculaAna ausente: execute os cadastros anteriores ou preencha as variaveis da colecao.\");",
+                                                                                    "if (!pm.variables.get(\"idVaga\")) throw new Error(\"Variavel idVaga ausente: execute os cadastros anteriores ou preencha as variaveis da colecao.\");"
+                                                                                ],
+                                                                       "type":  "text/javascript"
+                                                                   },
+                                                        "listen":  "prerequest"
+                                                    },
+                                                    {
+                                                        "script":  {
+                                                                       "exec":  [
+                                                                                    "pm.test(\"Status esperado\", function () { pm.expect([201]).to.include(pm.response.code); });",
+                                                                                    "if (pm.response.code === 201) {",
+                                                                                    "  const dados = pm.response.json();",
+                                                                                    "  pm.test(\"Resposta contem candidaturaId\", function () { pm.expect(dados).to.have.property(\"candidaturaId\"); });",
+                                                                                    "  if (dados.candidaturaId !== undefined \u0026\u0026 dados.candidaturaId !== null) pm.collectionVariables.set(\"candidaturaId\", String(dados.candidaturaId));",
+                                                                                    "}"
+                                                                                ],
+                                                                       "type":  "text/javascript"
+                                                                   },
+                                                        "listen":  "test"
+                                                    }
+                                                ],
+                                      "response":  [
+
+                                                   ]
+                                  },
+                                  {
+                                      "name":  "consultarCandidatura | CANDIDATURAS — consultar Ana pelo UUID da candidatura (200)",
+                                      "request":  {
+                                                      "method":  "GET",
+                                                      "header":  [
+                                                                     {
+                                                                         "key":  "Accept",
+                                                                         "type":  "text",
+                                                                         "value":  "application/json"
+                                                                     }
+                                                                 ],
+                                                      "url":  "{{candidaturasUrl}}/api/v1/candidaturas/{{candidaturaId}}",
+                                                      "description":  "Repetir ate AVALIADA; pontuacao esperada 10. PENDENTE e normal antes do consumo Kafka."
+                                                  },
+                                      "event":  [
+                                                    {
+                                                        "script":  {
+                                                                       "exec":  [
+                                                                                    "if (!pm.variables.get(\"candidaturasUrl\")) throw new Error(\"Variavel candidaturasUrl ausente: execute os cadastros anteriores ou preencha as variaveis da colecao.\");",
+                                                                                    "if (!pm.variables.get(\"candidaturaId\")) throw new Error(\"Variavel candidaturaId ausente: execute os cadastros anteriores ou preencha as variaveis da colecao.\");"
+                                                                                ],
+                                                                       "type":  "text/javascript"
+                                                                   },
+                                                        "listen":  "prerequest"
+                                                    },
+                                                    {
+                                                        "script":  {
+                                                                       "exec":  [
+                                                                                    "pm.test(\"Status esperado\", function () { pm.expect([200]).to.include(pm.response.code); });",
+                                                                                    "if (pm.response.code === 200 \u0026\u0026 pm.response.json().status === \"PENDENTE\") console.log(\"Avaliacao pendente: aguarde e consulte novamente antes de publicar.\");"
+                                                                                ],
+                                                                       "type":  "text/javascript"
+                                                                   },
+                                                        "listen":  "test"
+                                                    }
+                                                ],
+                                      "response":  [
+
+                                                   ]
+                                  },
+                                  {
+                                      "name":  "candidatarBia | CANDIDATURAS — inscrever Bia (201)",
+                                      "request":  {
+                                                      "method":  "POST",
+                                                      "header":  [
+                                                                     {
+                                                                         "key":  "Accept",
+                                                                         "type":  "text",
+                                                                         "value":  "application/json"
+                                                                     },
+                                                                     {
+                                                                         "key":  "Content-Type",
+                                                                         "type":  "text",
+                                                                         "value":  "application/json"
+                                                                     }
+                                                                 ],
+                                                      "url":  "{{candidaturasUrl}}/api/v1/candidaturas",
+                                                      "description":  "",
+                                                      "body":  {
+                                                                   "raw":  "{\n  \"matriculaEmpregado\": {{matriculaBia}},\n  \"idVaga\": {{idVaga}}\n}",
+                                                                   "options":  {
+                                                                                   "raw":  {
+                                                                                               "language":  "json"
+                                                                                           }
+                                                                               },
+                                                                   "mode":  "raw"
+                                                               }
+                                                  },
+                                      "event":  [
+                                                    {
+                                                        "script":  {
+                                                                       "exec":  [
+                                                                                    "pm.collectionVariables.unset(\"candidaturaBiaId\");",
+                                                                                    "if (!pm.variables.get(\"candidaturasUrl\")) throw new Error(\"Variavel candidaturasUrl ausente: execute os cadastros anteriores ou preencha as variaveis da colecao.\");",
+                                                                                    "if (!pm.variables.get(\"matriculaBia\")) throw new Error(\"Variavel matriculaBia ausente: execute os cadastros anteriores ou preencha as variaveis da colecao.\");",
+                                                                                    "if (!pm.variables.get(\"idVaga\")) throw new Error(\"Variavel idVaga ausente: execute os cadastros anteriores ou preencha as variaveis da colecao.\");"
+                                                                                ],
+                                                                       "type":  "text/javascript"
+                                                                   },
+                                                        "listen":  "prerequest"
+                                                    },
+                                                    {
+                                                        "script":  {
+                                                                       "exec":  [
+                                                                                    "pm.test(\"Status esperado\", function () { pm.expect([201]).to.include(pm.response.code); });",
+                                                                                    "if (pm.response.code === 201) {",
+                                                                                    "  const dados = pm.response.json();",
+                                                                                    "  pm.test(\"Resposta contem candidaturaId\", function () { pm.expect(dados).to.have.property(\"candidaturaId\"); });",
+                                                                                    "  if (dados.candidaturaId !== undefined \u0026\u0026 dados.candidaturaId !== null) pm.collectionVariables.set(\"candidaturaBiaId\", String(dados.candidaturaId));",
+                                                                                    "}"
+                                                                                ],
+                                                                       "type":  "text/javascript"
+                                                                   },
+                                                        "listen":  "test"
+                                                    }
+                                                ],
+                                      "response":  [
+
+                                                   ]
+                                  },
+                                  {
+                                      "name":  "consultarCandidaturaBia | CANDIDATURAS — consultar Bia (200); aguardar AVALIADA, 30 pontos",
+                                      "request":  {
+                                                      "method":  "GET",
+                                                      "header":  [
+                                                                     {
+                                                                         "key":  "Accept",
+                                                                         "type":  "text",
+                                                                         "value":  "application/json"
+                                                                     }
+                                                                 ],
+                                                      "url":  "{{candidaturasUrl}}/api/v1/candidaturas/{{candidaturaBiaId}}",
+                                                      "description":  ""
+                                                  },
+                                      "event":  [
+                                                    {
+                                                        "script":  {
+                                                                       "exec":  [
+                                                                                    "if (!pm.variables.get(\"candidaturasUrl\")) throw new Error(\"Variavel candidaturasUrl ausente: execute os cadastros anteriores ou preencha as variaveis da colecao.\");",
+                                                                                    "if (!pm.variables.get(\"candidaturaBiaId\")) throw new Error(\"Variavel candidaturaBiaId ausente: execute os cadastros anteriores ou preencha as variaveis da colecao.\");"
+                                                                                ],
+                                                                       "type":  "text/javascript"
+                                                                   },
+                                                        "listen":  "prerequest"
+                                                    },
+                                                    {
+                                                        "script":  {
+                                                                       "exec":  [
+                                                                                    "pm.test(\"Status esperado\", function () { pm.expect([200]).to.include(pm.response.code); });",
+                                                                                    "if (pm.response.code === 200 \u0026\u0026 pm.response.json().status === \"PENDENTE\") console.log(\"Avaliacao pendente: aguarde e consulte novamente antes de publicar.\");"
+                                                                                ],
+                                                                       "type":  "text/javascript"
+                                                                   },
+                                                        "listen":  "test"
+                                                    }
+                                                ],
+                                      "response":  [
+
+                                                   ]
+                                  },
+                                  {
+                                      "name":  "consultarRanking | CANDIDATURAS — ranking parcial por UUID da vaga (200)",
+                                      "request":  {
+                                                      "method":  "GET",
+                                                      "header":  [
+                                                                     {
+                                                                         "key":  "Accept",
+                                                                         "type":  "text",
+                                                                         "value":  "application/json"
+                                                                     }
+                                                                 ],
+                                                      "url":  "{{candidaturasUrl}}/api/v1/candidaturas/ranking/{{vagaId}}",
+                                                      "description":  "Depois das duas avaliacoes: Bia 30, Ana 10. Cache-aside Redis, TTL padrao 60 s.\nRepetir o GET para exercitar cache. Este ranking nao e o resultado oficial publicado."
+                                                  },
+                                      "event":  [
+                                                    {
+                                                        "script":  {
+                                                                       "exec":  [
+                                                                                    "if (!pm.variables.get(\"candidaturasUrl\")) throw new Error(\"Variavel candidaturasUrl ausente: execute os cadastros anteriores ou preencha as variaveis da colecao.\");",
+                                                                                    "if (!pm.variables.get(\"vagaId\")) throw new Error(\"Variavel vagaId ausente: execute os cadastros anteriores ou preencha as variaveis da colecao.\");"
+                                                                                ],
+                                                                       "type":  "text/javascript"
+                                                                   },
+                                                        "listen":  "prerequest"
+                                                    },
+                                                    {
+                                                        "script":  {
+                                                                       "exec":  [
+                                                                                    "pm.test(\"Status esperado\", function () { pm.expect([200]).to.include(pm.response.code); });"
+                                                                                ],
+                                                                       "type":  "text/javascript"
+                                                                   },
+                                                        "listen":  "test"
+                                                    }
+                                                ],
+                                      "response":  [
+
+                                                   ]
+                                  },
+                                  {
+                                      "name":  "consultarProntidao | CANDIDATURAS — prontidao do processo fechado (200; 404 antes do fechamento)",
+                                      "request":  {
+                                                      "method":  "GET",
+                                                      "header":  [
+                                                                     {
+                                                                         "key":  "Accept",
+                                                                         "type":  "text",
+                                                                         "value":  "application/json"
+                                                                     }
+                                                                 ],
+                                                      "url":  "{{candidaturasUrl}}/api/v1/candidaturas/processos/{{vagaId}}/prontidao",
+                                                      "description":  "Publicar somente com apto=true e todas as inscricoes avaliadas."
+                                                  },
+                                      "event":  [
+                                                    {
+                                                        "script":  {
+                                                                       "exec":  [
+                                                                                    "if (!pm.variables.get(\"candidaturasUrl\")) throw new Error(\"Variavel candidaturasUrl ausente: execute os cadastros anteriores ou preencha as variaveis da colecao.\");",
+                                                                                    "if (!pm.variables.get(\"vagaId\")) throw new Error(\"Variavel vagaId ausente: execute os cadastros anteriores ou preencha as variaveis da colecao.\");"
+                                                                                ],
+                                                                       "type":  "text/javascript"
+                                                                   },
+                                                        "listen":  "prerequest"
+                                                    },
+                                                    {
+                                                        "script":  {
+                                                                       "exec":  [
+                                                                                    "pm.test(\"Status esperado\", function () { pm.expect([200, 404]).to.include(pm.response.code); });"
+                                                                                ],
+                                                                       "type":  "text/javascript"
+                                                                   },
+                                                        "listen":  "test"
+                                                    }
+                                                ],
+                                      "response":  [
+
+                                                   ]
+                                  },
+                                  {
+                                      "name":  "consultarResultadoDefinitivo | CANDIDATURAS — resultado definitivo (200; 404 ate consumo/sem resultado local)",
+                                      "request":  {
+                                                      "method":  "GET",
+                                                      "header":  [
+                                                                     {
+                                                                         "key":  "Accept",
+                                                                         "type":  "text",
+                                                                         "value":  "application/json"
+                                                                     }
+                                                                 ],
+                                                      "url":  "{{candidaturasUrl}}/api/v1/candidaturas/resultados/{{vagaId}}",
+                                                      "description":  "Repetir se necessario. Retorna publicacao original, ranking persistido e contagens."
+                                                  },
+                                      "event":  [
+                                                    {
+                                                        "script":  {
+                                                                       "exec":  [
+                                                                                    "if (!pm.variables.get(\"candidaturasUrl\")) throw new Error(\"Variavel candidaturasUrl ausente: execute os cadastros anteriores ou preencha as variaveis da colecao.\");",
+                                                                                    "if (!pm.variables.get(\"vagaId\")) throw new Error(\"Variavel vagaId ausente: execute os cadastros anteriores ou preencha as variaveis da colecao.\");"
+                                                                                ],
+                                                                       "type":  "text/javascript"
+                                                                   },
+                                                        "listen":  "prerequest"
+                                                    },
+                                                    {
+                                                        "script":  {
+                                                                       "exec":  [
+                                                                                    "pm.test(\"Status esperado\", function () { pm.expect([200, 404]).to.include(pm.response.code); });",
+                                                                                    "if (pm.response.code === 200) pm.collectionVariables.set(\"resultadoEventId\", pm.response.json().publicacao.eventId);",
+                                                                                    "if (pm.response.code === 404) console.log(\"Resultado ainda indisponivel. Aguarde o consumo Kafka e envie novamente.\");"
+                                                                                ],
+                                                                       "type":  "text/javascript"
+                                                                   },
+                                                        "listen":  "test"
+                                                    }
+                                                ],
+                                      "response":  [
+
+                                                   ]
+                                  },
+                                  {
+                                      "name":  "encerrarBarreiraInterna | CANDIDATURAS — coordenacao interna: fechar barreira diretamente (200)",
+                                      "request":  {
+                                                      "method":  "POST",
+                                                      "header":  [
+                                                                     {
+                                                                         "key":  "Accept",
+                                                                         "type":  "text",
+                                                                         "value":  "application/json"
+                                                                     },
+                                                                     {
+                                                                         "key":  "Content-Type",
+                                                                         "type":  "text",
+                                                                         "value":  "application/json"
+                                                                     }
+                                                                 ],
+                                                      "url":  "{{candidaturasUrl}}/api/v1/candidaturas/processos/{{vagaId}}/encerramento",
+                                                      "description":  "No fluxo normal usar encerrarInscricoes de Vagas. Este bloco documenta a rota interna.\nExecutar, se desejado, apos o fechamento normal para observar a repeticao idempotente.",
+                                                      "body":  {
+                                                                   "raw":  "{\n  \"idVaga\": {{idVaga}}\n}",
+                                                                   "options":  {
+                                                                                   "raw":  {
+                                                                                               "language":  "json"
+                                                                                           }
+                                                                               },
+                                                                   "mode":  "raw"
+                                                               }
+                                                  },
+                                      "event":  [
+                                                    {
+                                                        "script":  {
+                                                                       "exec":  [
+                                                                                    "if (!pm.variables.get(\"candidaturasUrl\")) throw new Error(\"Variavel candidaturasUrl ausente: execute os cadastros anteriores ou preencha as variaveis da colecao.\");",
+                                                                                    "if (!pm.variables.get(\"vagaId\")) throw new Error(\"Variavel vagaId ausente: execute os cadastros anteriores ou preencha as variaveis da colecao.\");",
+                                                                                    "if (!pm.variables.get(\"idVaga\")) throw new Error(\"Variavel idVaga ausente: execute os cadastros anteriores ou preencha as variaveis da colecao.\");"
+                                                                                ],
+                                                                       "type":  "text/javascript"
+                                                                   },
+                                                        "listen":  "prerequest"
+                                                    },
+                                                    {
+                                                        "script":  {
+                                                                       "exec":  [
+                                                                                    "pm.test(\"Status esperado\", function () { pm.expect([200]).to.include(pm.response.code); });"
+                                                                                ],
+                                                                       "type":  "text/javascript"
+                                                                   },
+                                                        "listen":  "test"
+                                                    }
+                                                ],
+                                      "response":  [
+
+                                                   ]
+                                  }
+                              ]
+                 }
+             ]
+}

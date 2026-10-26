@@ -1,10 +1,19 @@
 package br.com.ada.selecaointerna.candidaturasservice;
 
-import lombok.Data;
+import java.time.Instant;
+import java.util.UUID;
 
-@Data
-public class CandidaturaOutputDto {
+public record CandidaturaOutputDto(UUID candidaturaId, Long matriculaEmpregado, Long idVaga,
+                                   Instant realizadaEm, String mensagem, String status,
+                                   Boolean elegivel, Integer pontuacao) {
+  public CandidaturaOutputDto(Candidatura candidatura) {
+    this(candidatura, null);
+  }
 
-  private final String mensagem = "Candidatura realizada com sucesso.";
-
+  public CandidaturaOutputDto(Candidatura candidatura, Avaliacao avaliacao) {
+    this(candidatura.getCandidaturaId(), candidatura.getMatriculaEmpregado(), candidatura.getIdVaga(),
+        candidatura.getRealizadaEm(), "Candidatura registrada com sucesso.",
+        avaliacao == null ? "PENDENTE" : "AVALIADA", avaliacao == null ? null : avaliacao.isElegivel(),
+        avaliacao == null ? null : avaliacao.getPontuacao());
+  }
 }

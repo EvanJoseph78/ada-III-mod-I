@@ -1,16 +1,13 @@
 package br.com.ada.selecaointerna.vagasservice;
 
-import lombok.Data;
+import br.com.ada.selecaointerna.contracts.*;
+import java.util.List;
+import java.util.UUID;
 
-@Data
-public class VagaOutputDto {
-
-  private Long idVaga;
-  private String nomeVaga;
-
+public record VagaOutputDto(Long idVaga, UUID vagaId, String nomeVaga,
+                            StatusVaga status, List<RequisitoDto> requisitos) {
   public VagaOutputDto(Vaga vaga) {
-    this.idVaga = vaga.getIdVaga();
-    this.nomeVaga = vaga.getNomeVaga();
+    this(vaga.getIdVaga(), vaga.getVagaId(), vaga.getNomeVaga(), vaga.getStatus(),
+        vaga.getRequisitos().stream().map(Requisito::toDto).toList());
   }
-
 }

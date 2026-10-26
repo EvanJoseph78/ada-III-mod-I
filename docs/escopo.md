@@ -1,6 +1,12 @@
 # Sistema de Gestão de Seleção Interna e Movimentação de Empregados
 
-## Visão Geral
+## Recorte entregue
+
+O backend avaliável implementa cadastro/consulta de perfis e vagas, inscrições com snapshots, avaliação assíncrona idempotente, ranking parcial com cache, fechamento explícito, publicação única do resultado e conclusão administrativa. Há três bases segregadas, Pact HTTP entre Candidaturas/Vagas e evidências de execução/testes. O roteiro completo está no [README](../README.md) e na [evidência de publicação](evidencias/publicacao-resultado.md).
+
+As seções seguintes preservam a visão inicial do produto. Unidade de lotação, período automático de inscrições, manutenção completa de currículos, múltiplos consumidores de negócio, cache de perfil, frontend/autenticação, retificação de resultado e escala de milhares de usuários não foram entregues nem comprovados. O escopo técnico CORE do enunciado foi priorizado; não interpretar benefícios esperados como medições realizadas.
+
+## Visão inicial do produto
 
 O projeto consiste em uma plataforma para gerenciamento completo dos processos de seleção interna de empregados, permitindo a publicação de vagas, inscrição de candidatos, avaliação automática dos requisitos e acompanhamento das etapas do processo seletivo.
 
