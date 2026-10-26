@@ -98,6 +98,10 @@ O resultado definitivo contém publicação original, ranking persistido e conta
 
 ### Demonstração reproduzível no Windows
 
+Para chamadas manuais, abrir [requisicoes.http](requisicoes.http) na extensão REST Client do VS Code. O arquivo reúne todos os endpoints implementados, cadastros fictícios e referências aos IDs retornados. Seguir a sequência indicada no cabeçalho e aguardar as avaliações/consumo antes de avançar.
+
+No Postman, importar a [coleção dos três serviços](postman/Selecao-Interna.postman_collection.json), com captura automática de IDs. [Ordem de execução e instruções](postman/README.md).
+
 Com infraestrutura pronta, portas 18081/18082/18083 livres e JARs construídos:
 
 ```powershell
